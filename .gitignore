@@ -1,0 +1,8 @@
+glfw-3.3.8/
+*.sln
+*.vcxproj*
+.vs
+glad.c
+x64/
+Debug/
+
