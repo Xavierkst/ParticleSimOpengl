@@ -53,7 +53,7 @@ int main() {
 
 		return -1;
 	}
-
+	
 	// create the viewport--first 2 params set 
 	// the loc of the lower left hand of the object
 	glViewport(0, 0, SCR_WIDTH, SCR_HT);
