@@ -34,7 +34,7 @@ unsigned int indices1[] = {  // note that we start from 0!
 };  
 
 int main() {
-	// This is the commit 1
+	// This is the commit TWO
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
