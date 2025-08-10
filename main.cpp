@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include "shader_s.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
@@ -10,27 +11,14 @@ void processInput(GLFWwindow* window);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HT = 600;
 
-const char* vertShaderSrc = "#version 450 core\n"
-	"layout (location = 0) in vec3 aPos;\n"
-	"out vec4 vertexColor;"
-	"void main()\n"
-	"{\n"
-	"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-	"	vertexColor = vec4(0.5, 0.0, 0.0, 1.0);\n"
-	"}\0";
+// const char* vertexShader = 
+// 
+// const char* fragmentShader = 
 
-const char* fragShaderSrc = "#version 450 core\n"
-	"out vec4 FragColor;\n"
-	"// in vec4 vertexColor;\n"
-	"uniform vec4 ourColor;\n"
-	"void main()\n"
-	"{\n"
-	"   // FragColor = vertexColor;\n"
-	"   FragColor = ourColor;\n"
-	"}\0";
-
-unsigned int indices1[] = {  // note that we start from 0!
-    0, 1, 2,   // first triangle
+// first triangle
+// note that we start from 0!
+unsigned int indices1[] = {  
+    0, 1, 2   
 };  
 
 int main() {
@@ -66,44 +54,8 @@ int main() {
 	// size changes
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-	// Compile the vert and frag shaders
-
-	GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vshader, 1, &vertShaderSrc, NULL);
-	glCompileShader(vshader);
-
-	int success;
-	char infoLog[512];
-	glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
-
-	if (!success) {
-		glGetShaderInfoLog(vshader, 512 * sizeof(char), NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
-	unsigned int fshader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fshader, 1, &fragShaderSrc, NULL);
-	glCompileShader(fshader);
-
-	glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
-
-	if (!success) {
-		glGetShaderInfoLog(fshader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
 	// Create shader program and link it with compiled 
 	// vert & frag shaders
-	unsigned int shaderProg = glCreateProgram();
-	glAttachShader(shaderProg, vshader);
-	glAttachShader(shaderProg, fshader);
-	glLinkProgram(shaderProg);
-	glGetProgramiv(shaderProg, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(shaderProg, 512, NULL, infoLog);
-		std::cout << "SHADER PROGRAM FAILED TO COMPILE\n" << infoLog << std::endl;
-	}
-
 	// another nice to have: unbind the curr bound VAO, tho not
 	// needed since binding another VAO will alr unbind the last 
 	// VAO for you.
@@ -121,22 +73,8 @@ int main() {
 
 	// create shader object, compile shader code, attach compiled shader objects to shader program, 
 	// link all attached code for a given program
-	unsigned int fShader2, shaderProg2;
-	fShader2 = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fShader2, 1, &fragShaderSrc, NULL);
-	glCompileShader(fShader2);
-	// glCreateshaderProgram
-	// glCreateShaderProgramv()
-	shaderProg2 = glCreateProgram();
-	glAttachShader(shaderProg2, vshader);
-	glAttachShader(shaderProg2, fShader2);
-	glLinkProgram(shaderProg2);
-
-	// after linking frag/vert shader executables to prog, 
-	// you can delete them
-	glDeleteShader(vshader);
-	glDeleteShader(fShader2);
-
+	Shader shader1("shader.vert", "shader.frag");
+	
 	unsigned int VAO, VBO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -159,9 +97,8 @@ int main() {
 	// Set OGL to render objects in wireframe mode:
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	// To unset this with another cmd, use:
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	int ourColorLoc = glGetUniformLocation(shaderProg, "ourColor");
-	 
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL/*GL_LINE*/);
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -170,30 +107,24 @@ int main() {
 		// fill viewport with flat color
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
 		// Render
-		float t = glfwGetTime();
-		float greenValue = (sin(t)/2.0f) + 0.5f;
-		glUseProgram(shaderProg); // Tri1
-		glUniform4f(ourColorLoc, .0f, greenValue, .0f, .0f);
+		shader1.setFloat("greenValue", (sin(glfwGetTime())/2.0f) + 0.5f);
+		shader1.setFloat("horizOffSet", 0.4f);
+		shader1.use();
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*) 0);
-
 		// Swap front pixel buffer w/ back
 		glfwSwapBuffers(window);
-
 		// Check for keys pressed, mouse moves/clicks etc.
 		// and call all registered callback fns
 		glfwPollEvents(); 
 	}
 
 	// De-allocating all resources when no longer in use
-	glDeleteProgram(shaderProg);
-	glDeleteProgram(shaderProg2);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
 	glDeleteVertexArrays(1, &VAO);
-	// glDeleteBuffers(1, vshader);
-	// pushing, popping!
 
 	// int numAttribs;
 	// glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &numAttribs);
