@@ -1,6 +1,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "stb_image.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 #include <filesystem>
@@ -17,8 +20,6 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HT = 600;
 
 int main() {
-	// int* var1 = new int[MAXIMUM_NUM];
-
 	SecondLog();
 	// This is the commit TWO
 	glfwInit();
@@ -141,6 +142,7 @@ int main() {
 	// glUniform1i(glGetUniformLocation(shader1.ID, "texture1"), 0);
 	shader1.setInt("texture1", 0);
 	shader1.setInt("texture2", 1);
+
 	// render loop
 	// --------------
 	while (!glfwWindowShouldClose(window)) {
@@ -158,8 +160,28 @@ int main() {
 
 		// Render
 		shader1.use();
+		// Always make sure your order or transform is SRT!!
+		// Scale, rotate, then, finally translate!! 
+		// (if you tried someth like translate, then scale, you'd also scale the translation by the same amt!)
+		glm::mat4 trans(glm::mat4(1.0f));
+		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(.5f, -.5f, .0f));
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(.0f, .0f, 1.0f));
+		unsigned int transfLoc = glGetUniformLocation(shader1.ID, "transf");
+		glUniformMatrix4fv(transfLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(-.5f, .5f, .0f));
+		float scaleFactor = static_cast<float>(sin((float)glfwGetTime()));
+		trans = glm::scale(trans, glm::vec3(scaleFactor*1.0f, scaleFactor*1.0f, scaleFactor*1.0f));
+		transfLoc = glGetUniformLocation(shader1.ID, "transf");
+		glUniformMatrix4fv(transfLoc, 1, GL_FALSE, &trans[0][0]);
+		// dont need to bind VAO again since its alr binded
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 		// Swap front pixel buffer w/ back buffer, and also
 		// Check for keys pressed, mouse moves/clicks etc.
 		// and call all registered callback fns
