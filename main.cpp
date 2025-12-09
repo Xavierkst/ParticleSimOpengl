@@ -1,27 +1,25 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "stb_image.h"
+
 #include <iostream>
+#include <filesystem>
 #include "shader_s.h"
+#include "Log.h"
+#include "DummyFile.h"
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-
 void processInput(GLFWwindow* window);
 
 // Values / Settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HT = 600;
 
-// const char* vertexShader = 
-// 
-// const char* fragmentShader = 
-
-// first triangle
-// note that we start from 0!
-unsigned int indices1[] = {  
-    0, 1, 2   
-};  
-
 int main() {
+	// int* var1 = new int[MAXIMUM_NUM];
+
+	SecondLog();
 	// This is the commit TWO
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -36,23 +34,15 @@ int main() {
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
+	// Set callback for when gl window resizes
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
-
 		return -1;
 	}
 	
-	// create the viewport--first 2 params set 
-	// the loc of the lower left hand of the object
-	glViewport(0, 0, SCR_WIDTH, SCR_HT);
-	
-	// ******************************************************
-	// ** Set callbacks for when gl window resizes
-	// ******************************************************
-	// Register the function as a new callback to be triggered when buffer 
-	// size changes
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	Shader shader1("texture.vert", "texture.frag");
 
 	// Create shader program and link it with compiled 
 	// vert & frag shaders
@@ -65,42 +55,94 @@ int main() {
 	// EBO b4 you unbind the VAO. If not, it won't store the 
 	// EBO in it!
 
-	float verticesAll[] = {
-		 0.0f,  0.5f, 0.0f,  // top 
-		-0.5f, -0.5f, 0.0f,  // left
-		 0.5f, -0.5f, 0.0f,  // right
+	float vertices[] = {
+		// positions          // colors           // texture coords
+		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
 	};
 
-	// create shader object, compile shader code, attach compiled shader objects to shader program, 
-	// link all attached code for a given program
-	Shader shader1("shader.vert", "shader.frag");
+	unsigned int indices[] = {  
+	    0, 1, 3, // 1st tri
+		1, 2, 3  // 2nd tri
+	};  
 	
 	unsigned int VAO, VBO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
 
-	// set up 1st VAO
 	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); // VBO
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verticesAll), verticesAll, GL_STATIC_DRAW);;
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // EBO
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices1), indices1, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0); // this is locIndex in the vert shader (set to 0)
 
-	// Unbind VAO 
-	// calling glVertexAttribPtr alr binds VBO_1 as the corresp vbo for VAO_1
-	// it sort of "locks it in". So we can unbind any curr bound VBO right after
-	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);;
 
-	// Set OGL to render objects in wireframe mode:
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	// To unset this with another cmd, use:
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL/*GL_LINE*/);
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
+	glEnableVertexAttribArray(1);
+	// Texture coord attribute
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL/*GL_LINE*/);
+
+
+	// load and create texture
+	unsigned int texture1, texture2; 
+	glGenTextures(1, &texture1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	// set texture wrapping params
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// texture filtering params
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// Generate a texture using the data gotten from the jpg file 
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
+	// const char* filePath = "container.jpg";
+	unsigned char* data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	} else {
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
+
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+	// set texture wrapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// load image, create the texture, and generate mip maps, 
+	data = stbi_load("awesomeface.png", &width, &height, &nrChannels, 0);
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	} else {
+		std::cout << "Failed to load texture" << std::endl;
+	}
+
+	stbi_image_free(data);
+
+	// don't forget to activate/use the shader before setting uniforms!
+	shader1.use();
+	// glUniform1i(glGetUniformLocation(shader1.ID, "texture1"), 0);
+	shader1.setInt("texture1", 0);
+	shader1.setInt("texture2", 1);
 	// render loop
+	// --------------
 	while (!glfwWindowShouldClose(window)) {
 		// Process key/mouse input commands
 		processInput(window);
@@ -108,23 +150,27 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		// bind all textures for each texture unit
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
 		// Render
-		shader1.setFloat("greenValue", (sin(glfwGetTime())/2.0f) + 0.5f);
-		shader1.setFloat("horizOffSet", 0.4f);
 		shader1.use();
 		glBindVertexArray(VAO);
-		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*) 0);
-		// Swap front pixel buffer w/ back
-		glfwSwapBuffers(window);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		// Swap front pixel buffer w/ back buffer, and also
 		// Check for keys pressed, mouse moves/clicks etc.
 		// and call all registered callback fns
+		glfwSwapBuffers(window);
 		glfwPollEvents(); 
 	}
 
 	// De-allocating all resources when no longer in use
+	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
-	glDeleteVertexArrays(1, &VAO);
 
 	// int numAttribs;
 	// glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &numAttribs);
@@ -154,15 +200,20 @@ void bindArrBuffer(unsigned int& VAO, unsigned int& VBO, int* vertices) {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
 
-void bindAndDrawElemBuffer(unsigned int& EBO)
-{
-	// tempEBO holds the index for the generated buffer 
-	unsigned int tempEBO;
-	glGenBuffers(1, &tempEBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tempEBO);
-	// Send the index data over to the GPU side, where tempEBO "points" to this buffer.
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices1), indices1, GL_STATIC_DRAW);
-	glDrawElements(GL_TRIANGLES, sizeof(indices1)/sizeof(GLuint), GL_UNSIGNED_INT, 0);
-}
+// void bindAndDrawElemBuffer(unsigned int& EBO)
+// {
+// 	// tempEBO holds the index for the generated buffer 
+// 	unsigned int tempEBO;
+// 	glGenBuffers(1, &tempEBO);
+// 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tempEBO);
+// 	// Send the index data over to the GPU side, where tempEBO "points" to this buffer.
+// 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+// 	glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLuint), GL_UNSIGNED_INT, 0);
+// }
 
+// unsigned char* getTexData(const char* filePath) {
+// 	unsigned char* data = stbi_load(filePath, &width, &height, &nrChannels);
+// 
+// 	return data;
+// }
 
