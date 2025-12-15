@@ -100,6 +100,9 @@ public:
 	void setFloat(const std::string& name, float val) const {
 		glUniform1f(glGetUniformLocation(ID, name.c_str()), val);
 	}
+	void setMat4(const std::string& name, const glm::mat4x4& mat) const {
+		glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
+	}
 };
 
 

@@ -18,6 +18,10 @@ void processInput(GLFWwindow* window);
 // Values / Settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HT = 600;
+	
+glm::vec3 camPos(.0f, .0f, 3.0f);
+glm::vec3 camFront(.0f, .0f, -1.0f);
+glm::vec3 camUp(.0f, 1.0f, .0f);
 
 int main() {
 	SecondLog();
@@ -104,7 +108,20 @@ int main() {
 	unsigned int indices[] = {  
 	    0, 1, 3, // 1st tri
 		1, 2, 3  // 2nd tri
-	};  
+	};
+
+	glm::vec3 cubePositions[] = {
+	    glm::vec3( 0.0f,  0.0f,  0.0f), 
+	    glm::vec3( 2.0f,  5.0f, -15.0f), 
+	    glm::vec3(-1.5f, -2.2f, -2.5f),  
+	    glm::vec3(-3.8f, -2.0f, -12.3f),  
+	    glm::vec3( 2.4f, -0.4f, -3.5f),  
+	    glm::vec3(-1.7f,  3.0f, -7.5f),  
+	    glm::vec3( 1.3f, -2.0f, -2.5f),  
+	    glm::vec3( 1.5f,  2.0f, -2.5f), 
+	    glm::vec3( 1.5f,  0.2f, -1.5f), 
+	    glm::vec3(-1.3f,  1.0f, -1.5f)  
+	}; 
 	
 	unsigned int VAO, VBO, EBO;
 	glGenVertexArrays(1, &VAO);
@@ -176,69 +193,60 @@ int main() {
 
 	// don't forget to activate/use the shader before setting uniforms!
 	shader1.use();
-	// glUniform1i(glGetUniformLocation(shader1.ID, "texture1"), 0);
 	shader1.setInt("texture1", 0);
 	shader1.setInt("texture2", 1);
-	glm::mat4 view = glm::mat4(1.0f);
-	view = glm::translate(view, glm::vec3(.0f, .0f, -3.0f));
 	glm::mat4 proj = glm::mat4(1.0f);
 	proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
-	unsigned int viewLoc = glGetUniformLocation(shader1.ID, "view");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-	unsigned int projLoc = glGetUniformLocation(shader1.ID, "proj");
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+	shader1.setMat4("proj", proj);
+
+	// We want the camera to look at the origin
+
+	// Because the camera looks in the -z direction, 
+	// we want the positive Z dir of the cam to be opposite of 
+	// where the cam is looking (the negative z dir), so:
+
+	glEnable(GL_DEPTH_TEST);
 	// render loop
 	// --------------
 	while (!glfwWindowShouldClose(window)) {
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		// Process key/mouse input commands
 		processInput(window);
 		// fill viewport with flat color
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-
 		// bind all textures for each texture unit
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
-
+	
 		// Render
 		shader1.use();
-		// Always make sure your order or transform is SRT!!
-		// Scale, rotate, then, finally translate!! 
+		// Always make sure your order or transform is SRT!! Scale, rotate, then translate!! 
 		// (if you tried someth like translate, then scale, you'd also scale the translation by the same amt!)
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::rotate(model, (float)glfwGetTime()*glm::radians(50.0f), glm::vec3(.5f, 1.0f, .0f));
-		unsigned int modelLoc = glGetUniformLocation(shader1.ID, "model");
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		// glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		// glm::lookAt(glm::vec3(camX, .0f, camZ), glm::vec3(.0f, .0f, .0f), glm::vec3(.0f, 1.0f, .0f));
 
-		glm::mat4 trans(glm::mat4(1.0f));
-		trans = glm::mat4(1.0f);
-		trans = glm::translate(trans, glm::vec3(.5f, -.5f, .0f));
-		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(.0f, .0f, 1.0f));
-		// trans *= model;
-		unsigned int transfLoc = glGetUniformLocation(shader1.ID, "transf");
-		glUniformMatrix4fv(transfLoc, 1, GL_FALSE, glm::value_ptr(trans));
+		glm::mat4 view;
+		view = glm::lookAt(camPos, camPos + camFront, camUp);
+		shader1.setMat4("view", view);
 
 		glBindVertexArray(VAO);
-		// glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		trans = glm::mat4(1.0f);
-		trans = glm::translate(trans, glm::vec3(-.5f, .5f, .0f));
-		float scaleFactor = static_cast<float>(sin((float)glfwGetTime()));
-		trans = glm::scale(trans, glm::vec3(scaleFactor*1.0f, scaleFactor*1.0f, scaleFactor*1.0f));
-		//trans *= model;
-		transfLoc = glGetUniformLocation(shader1.ID, "transf");
-		glUniformMatrix4fv(transfLoc, 1, GL_FALSE, &trans[0][0]);
-		// dont need to bind VAO again since its alr binded
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		// glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		for (int i = 0; i < 10; ++i) {
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, cubePositions[i]);
+			float time = (i%3) ? 1 : (float)glfwGetTime();
+			float angle = 20.0f * time;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, .5f));
+			shader1.setMat4("model", model);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 
 		// Swap front pixel buffer w/ back buffer, and also
+		glfwSwapBuffers(window);
 		// Check for keys pressed, mouse moves/clicks etc.
 		// and call all registered callback fns
-		glfwSwapBuffers(window);
 		glfwPollEvents(); 
 	}
 
@@ -246,10 +254,6 @@ int main() {
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
-
-	// int numAttribs;
-	// glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &numAttribs);
-	// std::cout << numAttribs << std::endl;
 
 	// De-alloc all prev allocated GLFW resources
 	glfwTerminate();
@@ -264,8 +268,24 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 void processInput(GLFWwindow* window) {
+	// Implement Walk around:
+	float camSpeed = 0.005f;
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	} 
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		camPos += camSpeed*camFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		glm::vec3 camRight = glm::normalize(glm::cross(camFront, camUp));
+		camPos -= camSpeed * camRight;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		camPos -= camSpeed * camFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		glm::vec3 camRight = glm::normalize(glm::cross(camFront, camUp));
+		camPos += camSpeed * camRight;
 	}
 }
 
