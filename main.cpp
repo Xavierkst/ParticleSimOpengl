@@ -11,10 +11,11 @@
 #include "Log.h"
 #include "DummyFile.h"
 #include "Camera.h"
+#include <optional>
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow* window, float deltaTime);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
@@ -22,11 +23,10 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HT = 600;
 	
-glm::vec3 camPos(.0f, .0f, 3.0f);
-glm::vec3 camFront(.0f, .0f, -1.0f);
-glm::vec3 camUp(.0f, 1.0f, .0f);
 
-Camera cam(camPos, camFront, camUp);
+Camera cam;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 float lastX = SCR_WIDTH / 2;
 float lastY = SCR_HT / 2;
 bool firstMouse = true;
@@ -211,8 +211,11 @@ int main() {
 
 	// render loop
 	while (!glfwWindowShouldClose(window)) {
+		float currentFrame = static_cast<float>(glfwGetTime());
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
 		// Process key/mouse input commands
-		processInput(window);
+		processInput(window, deltaTime);
 		// fill viewport with flat color
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -232,9 +235,8 @@ int main() {
 		glm::mat4 proj = glm::perspective(glm::radians(cam.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
 		shader1.setMat4("proj", proj);
 		// View transform matrix
-		glm::mat4 view = glm::lookAt(cam.getCamPos(), cam.getCamPos() + cam.getCamFront(), cam.getCamUp());
+		glm::mat4 view = cam.getViewMatrix();
 		shader1.setMat4("view", view);
-
 		// render boxes
 		glBindVertexArray(VAO);
 		for (int i = 0; i < 10; ++i) {
@@ -271,43 +273,30 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window) {
-
-	float camSpeed = 0.005f;
+void processInput(GLFWwindow* window, float deltaTime) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	} 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		cam.setCamPos(cam.getCamPos() + (camSpeed * cam.getCamFront()));
+		cam.ProcessKeyboard(FORWARD, deltaTime);
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		glm::vec3 camRight(glm::normalize(glm::cross(cam.getCamFront(), cam.getCamUp())));
-		cam.setCamPos(cam.getCamPos() - (camSpeed * camRight));
+		cam.ProcessKeyboard(LEFT, deltaTime);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		cam.setCamPos(cam.getCamPos() - (camSpeed * cam.getCamFront()));
+		cam.ProcessKeyboard(BACKWARD, deltaTime);
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		glm::vec3 camRight(glm::normalize(glm::cross(cam.getCamFront(), cam.getCamUp())));
-		cam.setCamPos(cam.getCamPos() + (camSpeed * camRight));
+		cam.ProcessKeyboard(RIGHT, deltaTime);
 	}
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	// When the mouse wheel scrolls fwd, we take it as a zooming effect (i.e. the fov gets smaller)
-	cam.setFov(cam.getFov() - float(yoffset));
-	std::cout << "calling" << std::endl;
-
-	if (cam.getFov() > 45.0f) {
-		cam.setFov(45.0f);
-	} 
-	if (cam.getFov() < 1.0f) {
-		cam.setFov(1.0f);
-	}
+	cam.ProcessMouseScroll(yoffset);
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-	
 	if (firstMouse) {
 		lastX = xpos;
 		lastY = ypos;
@@ -321,23 +310,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	const float sensitivity = 0.1f;
 	dx *= sensitivity;
 	dy *= sensitivity;
-	cam.setYaw(cam.getYaw() + dx);
-	cam.setPitch(cam.getPitch() + dy);
 
-	if (cam.getPitch() > 89.0f) {
-		cam.setPitch(89.0f);
-	}
-
-	if (cam.getPitch() < -89.0f) {
-		cam.setPitch(- 89.0f);
-	}
-
-	// Create the vector:
-	glm::vec3 direction;
-	direction.x = cos(glm::radians(cam.getYaw()))*cos(glm::radians(cam.getPitch()));
-	direction.y = sin(glm::radians(cam.getPitch()));
-	direction.z = sin(glm::radians(cam.getYaw()))*cos(glm::radians(cam.getPitch()));;
-	cam.setCamFront(glm::normalize(direction));
+	cam.ProcessMouseMovement(dx, dy);
 }
 
 void bindArrBuffer(unsigned int& VAO, unsigned int& VBO, int* vertices) {
