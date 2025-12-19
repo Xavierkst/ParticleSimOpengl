@@ -6,7 +6,7 @@ layout (location = 2) in vec2 aTexCoord;
 
 out vec4 vertexColor;
 out vec2 texCoord;
-uniform mat4 transf;
+
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;

@@ -10,10 +10,13 @@
 #include "shader_s.h"
 #include "Log.h"
 #include "DummyFile.h"
+#include "Camera.h"
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 // Values / Settings
 const unsigned int SCR_WIDTH = 800;
@@ -22,6 +25,11 @@ const unsigned int SCR_HT = 600;
 glm::vec3 camPos(.0f, .0f, 3.0f);
 glm::vec3 camFront(.0f, .0f, -1.0f);
 glm::vec3 camUp(.0f, 1.0f, .0f);
+
+Camera cam(camPos, camFront, camUp);
+float lastX = SCR_WIDTH / 2;
+float lastY = SCR_HT / 2;
+bool firstMouse = true;
 
 int main() {
 	SecondLog();
@@ -41,6 +49,8 @@ int main() {
 	glfwMakeContextCurrent(window);
 	// Set callback for when gl window resizes
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
 
 	if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
@@ -133,15 +143,10 @@ int main() {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);;
 
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
 	// position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	// color attribute
-	// glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
-	// glEnableVertexAttribArray(1);
+
 	// Texture coord attribute
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(2);
@@ -162,7 +167,6 @@ int main() {
 	// Generate a texture using the data gotten from the jpg file 
 	int width, height, nrChannels;
 	stbi_set_flip_vertically_on_load(true);
-	// const char* filePath = "container.jpg";
 	unsigned char* data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
 	if (data) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -180,6 +184,7 @@ int main() {
 	// set texture filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 	// load image, create the texture, and generate mip maps, 
 	data = stbi_load("awesomeface.png", &width, &height, &nrChannels, 0);
 	if (data) {
@@ -195,46 +200,45 @@ int main() {
 	shader1.use();
 	shader1.setInt("texture1", 0);
 	shader1.setInt("texture2", 1);
-	glm::mat4 proj = glm::mat4(1.0f);
-	proj = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
-	shader1.setMat4("proj", proj);
 
 	// We want the camera to look at the origin
 
 	// Because the camera looks in the -z direction, 
 	// we want the positive Z dir of the cam to be opposite of 
 	// where the cam is looking (the negative z dir), so:
-
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glEnable(GL_DEPTH_TEST);
+
 	// render loop
-	// --------------
 	while (!glfwWindowShouldClose(window)) {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		// Process key/mouse input commands
 		processInput(window);
 		// fill viewport with flat color
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		// bind all textures for each texture unit
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
-	
-		// Render
+		
+		// Activate shader so we can start sending out matrices from CPU to Shader/GPU
 		shader1.use();
 		// Always make sure your order or transform is SRT!! Scale, rotate, then translate!! 
 		// (if you tried someth like translate, then scale, you'd also scale the translation by the same amt!)
-		// glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		// glm::lookAt(glm::vec3(camX, .0f, camZ), glm::vec3(.0f, .0f, .0f), glm::vec3(.0f, 1.0f, .0f));
 
-		glm::mat4 view;
-		view = glm::lookAt(camPos, camPos + camFront, camUp);
+		// Perspective proj transform matrix. Pass proj matrix to shader/send it to the GPU
+		glm::mat4 proj = glm::perspective(glm::radians(cam.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
+		shader1.setMat4("proj", proj);
+		// View transform matrix
+		glm::mat4 view = glm::lookAt(cam.getCamPos(), cam.getCamPos() + cam.getCamFront(), cam.getCamUp());
 		shader1.setMat4("view", view);
 
+		// render boxes
 		glBindVertexArray(VAO);
 		for (int i = 0; i < 10; ++i) {
-			glm::mat4 model = glm::mat4(1.0f);
+			glm::mat4 model(1.0f);
 			model = glm::translate(model, cubePositions[i]);
 			float time = (i%3) ? 1 : (float)glfwGetTime();
 			float angle = 20.0f * time;
@@ -243,19 +247,19 @@ int main() {
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
-		// Swap front pixel buffer w/ back buffer, and also
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
-		// Check for keys pressed, mouse moves/clicks etc.
-		// and call all registered callback fns
 		glfwPollEvents(); 
 	}
 
-	// De-allocating all resources when no longer in use
+    // optional: de-allocate all resources once they've outlived their purpose:
+    // ------------------------------------------------------------------------
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
 
-	// De-alloc all prev allocated GLFW resources
+	// glfw: terminate, clearing all previously allocated GLFW resources.
+    // ------------------------------------------------------------------
 	glfwTerminate();
 
 	return 0;
@@ -268,25 +272,72 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 void processInput(GLFWwindow* window) {
-	// Implement Walk around:
+
 	float camSpeed = 0.005f;
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	} 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		camPos += camSpeed*camFront;
+		cam.setCamPos(cam.getCamPos() + (camSpeed * cam.getCamFront()));
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		glm::vec3 camRight = glm::normalize(glm::cross(camFront, camUp));
-		camPos -= camSpeed * camRight;
+		glm::vec3 camRight(glm::normalize(glm::cross(cam.getCamFront(), cam.getCamUp())));
+		cam.setCamPos(cam.getCamPos() - (camSpeed * camRight));
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		camPos -= camSpeed * camFront;
+		cam.setCamPos(cam.getCamPos() - (camSpeed * cam.getCamFront()));
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		glm::vec3 camRight = glm::normalize(glm::cross(camFront, camUp));
-		camPos += camSpeed * camRight;
+		glm::vec3 camRight(glm::normalize(glm::cross(cam.getCamFront(), cam.getCamUp())));
+		cam.setCamPos(cam.getCamPos() + (camSpeed * camRight));
 	}
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	// When the mouse wheel scrolls fwd, we take it as a zooming effect (i.e. the fov gets smaller)
+	cam.setFov(cam.getFov() - float(yoffset));
+	std::cout << "calling" << std::endl;
+
+	if (cam.getFov() > 45.0f) {
+		cam.setFov(45.0f);
+	} 
+	if (cam.getFov() < 1.0f) {
+		cam.setFov(1.0f);
+	}
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	
+	if (firstMouse) {
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+	double dx = xpos - lastX;
+	double dy = lastY - ypos; // flipped b/c y-coords range from bottom to top
+	lastX = xpos;
+	lastY = ypos;
+	
+	const float sensitivity = 0.1f;
+	dx *= sensitivity;
+	dy *= sensitivity;
+	cam.setYaw(cam.getYaw() + dx);
+	cam.setPitch(cam.getPitch() + dy);
+
+	if (cam.getPitch() > 89.0f) {
+		cam.setPitch(89.0f);
+	}
+
+	if (cam.getPitch() < -89.0f) {
+		cam.setPitch(- 89.0f);
+	}
+
+	// Create the vector:
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(cam.getYaw()))*cos(glm::radians(cam.getPitch()));
+	direction.y = sin(glm::radians(cam.getPitch()));
+	direction.z = sin(glm::radians(cam.getYaw()))*cos(glm::radians(cam.getPitch()));;
+	cam.setCamFront(glm::normalize(direction));
 }
 
 void bindArrBuffer(unsigned int& VAO, unsigned int& VBO, int* vertices) {
@@ -294,21 +345,3 @@ void bindArrBuffer(unsigned int& VAO, unsigned int& VBO, int* vertices) {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO); // VBO
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
-
-// void bindAndDrawElemBuffer(unsigned int& EBO)
-// {
-// 	// tempEBO holds the index for the generated buffer 
-// 	unsigned int tempEBO;
-// 	glGenBuffers(1, &tempEBO);
-// 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tempEBO);
-// 	// Send the index data over to the GPU side, where tempEBO "points" to this buffer.
-// 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-// 	glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLuint), GL_UNSIGNED_INT, 0);
-// }
-
-// unsigned char* getTexData(const char* filePath) {
-// 	unsigned char* data = stbi_load(filePath, &width, &height, &nrChannels);
-// 
-// 	return data;
-// }
-
