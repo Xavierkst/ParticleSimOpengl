@@ -1,6 +1,5 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "stb_image.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -8,14 +7,11 @@
 #include <iostream>
 #include <filesystem>
 #include "shader_s.h"
-#include "Log.h"
-#include "DummyFile.h"
 #include "Camera.h"
-#include <optional>
-
+#include "STBFile.h"
+#include "InputHandler.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window, float deltaTime);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
@@ -24,15 +20,15 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HT = 600;
 	
 
-Camera cam;
+Camera camActor;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float lastX = SCR_WIDTH / 2;
 float lastY = SCR_HT / 2;
 bool firstMouse = true;
 
+
 int main() {
-	SecondLog();
 	// This is the commit TWO
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -43,9 +39,10 @@ int main() {
 	if (window == NULL) {
 		std::cout << "Failed to create window!" << std::endl;
 		glfwTerminate();
-
 		return -1;
 	}
+
+	InputHandler inputHandler(window);
 	glfwMakeContextCurrent(window);
 	// Set callback for when gl window resizes
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -214,8 +211,12 @@ int main() {
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-		// Process key/mouse input commands
-		processInput(window, deltaTime);
+		// Process key/mouse input commands for camera actor
+		std::vector<Command*> cmds = inputHandler.processInput(window);
+		for (auto& cmd : cmds) {
+			cmd->execute(camActor, deltaTime);
+		}
+
 		// fill viewport with flat color
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -232,10 +233,10 @@ int main() {
 		// (if you tried someth like translate, then scale, you'd also scale the translation by the same amt!)
 
 		// Perspective proj transform matrix. Pass proj matrix to shader/send it to the GPU
-		glm::mat4 proj = glm::perspective(glm::radians(cam.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
+		glm::mat4 proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
 		shader1.setMat4("proj", proj);
 		// View transform matrix
-		glm::mat4 view = cam.getViewMatrix();
+		glm::mat4 view = camActor.getViewMatrix();
 		shader1.setMat4("view", view);
 		// render boxes
 		glBindVertexArray(VAO);
@@ -273,45 +274,29 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window, float deltaTime) {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		glfwSetWindowShouldClose(window, GL_TRUE);
-	} 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		cam.ProcessKeyboard(FORWARD, deltaTime);
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		cam.ProcessKeyboard(LEFT, deltaTime);
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		cam.ProcessKeyboard(BACKWARD, deltaTime);
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		cam.ProcessKeyboard(RIGHT, deltaTime);
-	}
-}
-
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	// When the mouse wheel scrolls fwd, we take it as a zooming effect (i.e. the fov gets smaller)
-	cam.ProcessMouseScroll(yoffset);
+	camActor.ProcessMouseScroll(yoffset);
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	// Check if its first time the app is in focus, do this to avoid
+	// suddenly jump in camera
 	if (firstMouse) {
+		firstMouse = false;
 		lastX = xpos;
 		lastY = ypos;
-		firstMouse = false;
 	}
-	double dx = xpos - lastX;
-	double dy = lastY - ypos; // flipped b/c y-coords range from bottom to top
+
+	// Calculate the x and y offsets and set that into a dir vector
+	double xOffset, yOffset;
+	const float moveSensitivity = 0.1f;
+	xOffset = (xpos - lastX)*moveSensitivity;
+	yOffset = (lastY - ypos)*moveSensitivity; // flipped b/c y coords on screen grow in value jrom top to btm
 	lastX = xpos;
 	lastY = ypos;
-	
-	const float sensitivity = 0.1f;
-	dx *= sensitivity;
-	dy *= sensitivity;
 
-	cam.ProcessMouseMovement(dx, dy);
+	camActor.ProcessMouseMovement(xOffset, yOffset);
 }
 
 void bindArrBuffer(unsigned int& VAO, unsigned int& VBO, int* vertices) {
