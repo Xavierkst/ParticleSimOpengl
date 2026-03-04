@@ -18,7 +18,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 // Values / Settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HT = 600;
-	
+
 
 Camera camActor;
 float deltaTime = 0.0f;

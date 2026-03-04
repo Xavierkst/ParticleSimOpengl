@@ -13,27 +13,19 @@ public:
 class NoCommand : public Command {
 public:
 	// execute idle updates
-	virtual void execute(Camera& actor, float deltaTime) {
-		actor.applyGravity(deltaTime);
-	}
+	virtual void execute(Camera& actor, float deltaTime);
 };
 
 class JumpCommand : public Command {
 public:
-	virtual void execute(Camera& actor, float deltaTime) {
-		if (actor.isGrounded()) {
-			actor.ProcessKeyboard(UP, deltaTime);
-		}
-	}
+	virtual void execute(Camera& actor, float deltaTime);
 };
 
 class MoveCommand : public Command {
 public:
-	MoveCommand(CameraMovement d) : dir(d) {}
-	virtual void execute(Camera& actor, float deltaTime) {
-		actor.ProcessKeyboard(dir, deltaTime);
-	}
-	~MoveCommand() {}
+	MoveCommand(CameraMovement d);
+	virtual void execute(Camera& actor, float deltaTime);
+	~MoveCommand();
 
 private: 
 	CameraMovement dir;
@@ -41,12 +33,9 @@ private:
 
 class CloseWinCommand : public Command {
 public:
-	CloseWinCommand(GLFWwindow* win) : window(win) {
-	}
-	~CloseWinCommand() {}
-	virtual void execute(Camera& actor, float deltaTime) {
-		glfwSetWindowShouldClose(window, GL_TRUE);
-	}
+	CloseWinCommand(GLFWwindow* win);
+	~CloseWinCommand();
+	virtual void execute(Camera& actor, float deltaTime);
 private:
 	GLFWwindow* window;
 };
