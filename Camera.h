@@ -34,9 +34,13 @@ private:
 	void updateCameraVectors();
 
 public: 
+	// Because the camera looks in the -z direction (at the origin),
+	// we want the positive Z dir of the cam to be opposite of where the cam is looking.
 	Camera(glm::vec3 pos = glm::vec3(.0f, .0f, 3.0f), 
-		glm::vec3 target = glm::vec3(.0f, .0f, -1.0f), glm::vec3 up = glm::vec3(.0f, 1.0f, .0f), 
+		glm::vec3 target = glm::vec3(.0f, .0f, -1.0f), 
+		glm::vec3 up = glm::vec3(.0f, 1.0f, .0f), 
 		float y = YAW, float p = PITCH);
+
 	void ProcessKeyboard(const CameraMovement dir, const float deltaTime);
 	void ProcessMouseMovement(const float dx, const float dy, const GLboolean constrainPitch = true);
 	void ProcessMouseScroll(const float yoffset);

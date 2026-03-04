@@ -10,17 +10,13 @@
 
 class Shader {
 public:
-	// Prog ID
 	unsigned int ID;
 	Shader(const char* vShaderPath, const char* fShaderPath) {
-		// 2 strings which store the v and f shader code
 		std::string vShaderCode, fShaderCode;
-		// 2 infile streams to read file
 		std::ifstream vShaderFile, fShaderFile;
-		// set exceptions for the ifstreams
 		vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 		fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		// do a try and catch block
+		
 		try {
 			vShaderFile.open(vShaderPath);
 			fShaderFile.open(fShaderPath);
@@ -65,27 +61,21 @@ public:
 			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
 		}
 
-		// Link v and f shaders to this program object
 		ID = glCreateProgram();
 		glAttachShader(ID, vertex);
 		glAttachShader(ID, fragment);
 		glLinkProgram(ID);
 
-		// print linking errors (if any):
 		glGetProgramiv(ID, GL_LINK_STATUS, &success);
 		if (!success) {
 			glGetProgramInfoLog(ID, 512, NULL, infoLog);
 			std::cout << "ERROR::SHADER::PROGRAM:: LINKING_FAILED\n" << infoLog << std::endl;
 		}
 
-		// Now that you've linked the attached shaders, (linked to where?)
-		// time to delete those shader code cuz no one needs it anymore.
-		// its linked into the program.
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
 	}
 
-	// call to use/activate this shader
 	void use() {
 		glUseProgram(ID);
 	}

@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include <filesystem>
-#include "shader_s.h"
+#include "Shader.h"
 #include "Camera.h"
 #include "STBFile.h"
 #include "InputHandler.h"
@@ -130,6 +130,7 @@ int main() {
 	    glm::vec3(-1.3f,  1.0f, -1.5f)  
 	}; 
 	
+
 	unsigned int VAO, VBO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -193,25 +194,19 @@ int main() {
 
 	stbi_image_free(data);
 
-	// don't forget to activate/use the shader before setting uniforms!
+	// Activate/use the shader before setting uniforms
 	shader1.use();
 	shader1.setInt("texture1", 0);
 	shader1.setInt("texture2", 1);
 
-	// We want the camera to look at the origin
-
-	// Because the camera looks in the -z direction, 
-	// we want the positive Z dir of the cam to be opposite of 
-	// where the cam is looking (the negative z dir), so:
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glEnable(GL_DEPTH_TEST);
 
-	// render loop
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-		// Process key/mouse input commands for camera actor
+		// Process multiple key/mouse input commands for camera actor per frame
 		std::vector<Command*> cmds = inputHandler.processInput(window);
 		for (auto& cmd : cmds) {
 			cmd->execute(camActor, deltaTime);

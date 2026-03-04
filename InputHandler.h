@@ -9,9 +9,7 @@ class InputHandler {
 public:
 	// allow for controls editting by user
 	InputHandler(GLFWwindow* win);
-
 	std::vector<Command*> processInput(GLFWwindow* window);
-
 	~InputHandler();
 
 	// TODO: Add a function that manages re-mapping which button pertains to which action/command.
