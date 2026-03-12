@@ -11,9 +11,7 @@ InputHandler::InputHandler(GLFWwindow* win) {
 	noButton = new NoCommand();
 }
 
-std::vector<Command*> InputHandler::processInput(GLFWwindow* window) {
-	std::vector<Command*> cmds;
-
+void InputHandler::processInput(GLFWwindow* window, std::vector<Command*>& cmds) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		cmds.push_back(buttonEsc);
 	}
@@ -34,8 +32,6 @@ std::vector<Command*> InputHandler::processInput(GLFWwindow* window) {
 	}
 	// Apply gravity on the player always
 	cmds.push_back(noButton);
-
-	return cmds;
 }
 
 InputHandler::~InputHandler() {

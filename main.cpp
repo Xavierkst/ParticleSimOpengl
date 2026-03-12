@@ -59,17 +59,8 @@ int main() {
 	Shader lightingShader("texture.vert", "lighting.frag");
 	Shader lightSrcShader("texture.vert", "lightSource.frag");
 
-	// Create shader program and link it with compiled 
-	// vert & frag shaders
-	// another nice to have: unbind the curr bound VAO, tho not
-	// needed since binding another VAO will alr unbind the last 
-	// VAO for you.
-	// Note: VAO stores all binds for buffers that you bind 
-	// (eg. VBO, EBO), as well as all unbind up to the point
-	// where you unbind the VAO. So make sure you don't unbind a
-	// EBO b4 you unbind the VAO. If not, it won't store the 
-	// EBO in it!
-
+	// make sure you don't unbind an EBO b4 you unbind the VAO. 
+	// If not, it won't store the EBO in it!
 	float vertices[] = {
 		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
@@ -114,19 +105,6 @@ int main() {
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 	};
 
-	glm::vec3 cubePositions[] = {
-	    glm::vec3( 0.0f,  0.0f,  0.0f), 
-	    glm::vec3( 2.0f,  5.0f, -15.0f), 
-	    glm::vec3(-1.5f, -2.2f, -2.5f),  
-	    glm::vec3(-3.8f, -2.0f, -12.3f),  
-	    glm::vec3( 2.4f, -0.4f, -3.5f),  
-	    glm::vec3(-1.7f,  3.0f, -7.5f),  
-	    glm::vec3( 1.3f, -2.0f, -2.5f),  
-	    glm::vec3( 1.5f,  2.0f, -2.5f), 
-	    glm::vec3( 1.5f,  0.2f, -1.5f), 
-	    glm::vec3(-1.3f,  1.0f, -1.5f)  
-	};
-
 	unsigned int cubeVAO, VBO;
 	glGenVertexArrays(1, &cubeVAO);
 	glGenBuffers(1, &VBO);
@@ -155,7 +133,8 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	// light's position in world space
-	glm::vec3 lightPos(1.2f, 0.2f, 2.0f);
+	glm::vec3 lightPos(1.2f, 0.6f, 2.0f);
+	std::vector<Command*> cmds;
 
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -163,18 +142,24 @@ int main() {
 		lastFrame = currentFrame;
 
 		// Process multiple key/mouse input commands for camera actor per frame
-		std::vector<Command*> cmds = inputHandler.processInput(window);
+		inputHandler.processInput(window, cmds);
 		for (auto& cmd : cmds) {
 			cmd->execute(camActor, deltaTime);
 		}
+		cmds.clear();
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		// Ensure your order or transform is SRT: Scale, rotate, then translate
 		// if you tried someth like translate bef scale, you'll scale the translation by the same amt
-
-		glm::vec3 posOffset = glm::vec3(1.0f + cos(currentFrame)*2.0f, sin(currentFrame/2.0f), 0.0f);
+		glm::vec3 lightColor(1.0f);
+		lightColor.x = sin(glfwGetTime()*2.0f);
+		lightColor.y = sin(glfwGetTime()*0.7f);
+		lightColor.z = sin(glfwGetTime()*1.3f);
+		
+		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
+		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
 
 		glm::mat4 proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
 		lightingShader.setMat4("proj", proj);
@@ -185,10 +170,15 @@ int main() {
 		lightingShader.setMat4("proj", proj);
 		lightingShader.setMat4("view", view);
 		lightingShader.setMat4("model", model);
-		lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-		lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-		lightingShader.setVec3("lightPos", lightPos + posOffset);
 		lightingShader.setVec3("viewPos", camActor.getCamPos());
+		lightingShader.setVec3("light.ambient", glm::vec3(1.0f));
+		lightingShader.setVec3("light.diffuse", glm::vec3(1.0f));
+		lightingShader.setVec3("light.specular", glm::vec3(1.0f));
+		lightingShader.setVec3("light.position", lightPos);
+		lightingShader.setVec3("mat.ambient", 0.0f, 0.1f, 0.06f);
+		lightingShader.setVec3("mat.diffuse", 0.0f, 0.50980392f, 0.50980392f);
+		lightingShader.setVec3("mat.specular", 0.501960780f, 0.501960780f, 0.501960780f);
+		lightingShader.setFloat("mat.shininess", 32.0f);
 
 		// Draw cube
 		glBindVertexArray(cubeVAO);
@@ -196,30 +186,15 @@ int main() {
 
 		lightSrcShader.use();
 		glm::mat4 lightModel(1.0f);
-		lightModel = glm::translate(lightModel, lightPos + posOffset);
+		lightModel = glm::translate(lightModel, lightPos);
 		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
 		lightSrcShader.setMat4("model", lightModel);
 		lightSrcShader.setMat4("view", view);
 		lightSrcShader.setMat4("proj", proj);
-		lightSrcShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		lightSrcShader.setVec3("lightColor", glm::vec3(1.0f));
 		// Draw cube light
 		glBindVertexArray(lightCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		// render boxes
-		// glBindVertexArray(VAO);
-		// for (int i = 0; i < 10; ++i) {
-		// 	glm::mat4 model(1.0f);
-		// 	model = glm::translate(model, cubePositions[i]);
-		// 	float time = (i%3) ? 1 : (float)glfwGetTime();
-		// 	float angle = 20.0f * time;
-		// 	model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, .5f));
-		// 	lightingShader.setMat4("model", model);
-		// 	if (i == 0)
-		// 		continue;
-		// 	glDrawArrays(GL_TRIANGLES, 0, 36);
-		// }
-		
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
