@@ -174,6 +174,8 @@ int main() {
 		// Ensure your order or transform is SRT: Scale, rotate, then translate
 		// if you tried someth like translate bef scale, you'll scale the translation by the same amt
 
+		glm::vec3 posOffset = glm::vec3(1.0f + cos(currentFrame)*2.0f, sin(currentFrame/2.0f), 0.0f);
+
 		glm::mat4 proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
 		lightingShader.setMat4("proj", proj);
 		glm::mat4 view = camActor.getViewMatrix();
@@ -185,7 +187,7 @@ int main() {
 		lightingShader.setMat4("model", model);
 		lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
 		lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-		lightingShader.setVec3("lightPos", lightPos);
+		lightingShader.setVec3("lightPos", lightPos + posOffset);
 		lightingShader.setVec3("viewPos", camActor.getCamPos());
 
 		// Draw cube
@@ -194,7 +196,7 @@ int main() {
 
 		lightSrcShader.use();
 		glm::mat4 lightModel(1.0f);
-		lightModel = glm::translate(lightModel, lightPos);
+		lightModel = glm::translate(lightModel, lightPos + posOffset);
 		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
 		lightSrcShader.setMat4("model", lightModel);
 		lightSrcShader.setMat4("view", view);

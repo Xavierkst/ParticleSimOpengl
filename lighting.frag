@@ -4,29 +4,36 @@ out vec4 FragColor;
 
 in vec3 FragPos;
 in vec3 Normal;
+in vec3 LightPos;
+in vec4 FColor;
 
 uniform vec3 objectColor;
 uniform vec3 lightColor;
-uniform vec3 lightPos;
 uniform vec3 viewPos;
+
+uniform mat4 proj;
+uniform mat4 view;
 
 void main()
 {
-	float ambientScale = 0.10f;
-	vec3 ambient = lightColor * ambientScale;
-	vec3 lightDir = normalize(FragPos - lightPos);
-	// Calculate dot prod of surface normal and reverse of lightDir
-	vec3 norm = normalize(Normal);
-	float diff = max(dot(-lightDir, norm), 0.0);
-	vec3 diffuse = diff * lightColor;
+	FragColor = FColor;
+	// float ambientScale = 0.10f;
+	// vec3 ambient = lightColor * ambientScale;
+	// vec3 lightDir = normalize(FragPos - LightPos);
 
-	vec3 eyeDir = normalize(viewPos - FragPos);
-	// reflect fn expect light dir to point from light src to frag position
-	vec3 reflectDir = reflect(lightDir, norm);
-	float specularStr = 0.5f;
-	float spec = pow(max(0.0, dot(eyeDir, reflectDir)), 64);
-	vec3 specular = spec * lightColor * specularStr;
+	// // Calculate dot prod of surface normal and reverse of lightDir
+	// vec3 norm = normalize(Normal);
+	// float diff = max(dot(-lightDir, norm), 0.0);
+	// vec3 diffuse = diff * lightColor;
 
-	vec3 res = (diffuse + ambient + specular)*objectColor;
-	FragColor = vec4(res, 1.0f);
+	// // vec3 viewDir = normalize(vviewPos - FragPos);
+	// vec3 viewDir = normalize(-FragPos);
+	// // reflect fn expect light dir to point from light src to frag position
+	// vec3 reflectDir = reflect(lightDir, norm);
+	// float specularStr = 0.5f;
+	// float spec = pow(max(0.0, dot(viewDir, reflectDir)), 32);
+	// vec3 specular = spec * lightColor * specularStr;
+
+	// vec3 res = (diffuse + ambient + specular)*objectColor;
+	// FragColor = vec4(res, 1.0f);
 }
