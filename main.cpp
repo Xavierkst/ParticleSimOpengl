@@ -1,9 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "Shader.h"
 #include "Camera.h"
@@ -58,6 +56,81 @@ int main() {
 	
 	Shader lightingShader("texture.vert", "lighting.frag");
 	Shader lightSrcShader("texture.vert", "lightSource.frag");
+
+	int width, ht, numColorChannels;
+	unsigned char* data = stbi_load("container.jpg", &width, &ht, &numColorChannels, 0);
+	unsigned int texID;
+	glGenTextures(1, &texID);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texID);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (data) {
+		// generate the actual texture (after we read it using stbi_load)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, ht, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		// generate mip maps for curr binded texture ID
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data); // free mem
+
+	unsigned int texID2;
+	glGenTextures(1, &texID2);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texID2);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	stbi_set_flip_vertically_on_load(true);
+	data = stbi_load("awesomeface.png", &width, &ht, &numColorChannels, 0);
+
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, ht, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
+
+	float verts[] = {
+    // positions          // colors           // texture coords
+     0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0, 1.0,   // top right
+     0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0, 0.0,   // bottom right
+    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0, 0.0,   // bottom left
+    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0, 1.0    // top left 
+	};
+	unsigned int indices[] = {  
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
+    };
+	unsigned int texVAO, texVBO, texEBO;
+	glGenVertexArrays(1, &texVAO);
+	glBindVertexArray(texVAO);
+
+	// note: always bind buffer before passing in buffer data
+	glGenBuffers(1, &texVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, texVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	glGenBuffers(1, &texEBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, texEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	Shader texShaderProg("texCoord.vert", "texCoord.frag");
+
 
 	// make sure you don't unbind an EBO b4 you unbind the VAO. 
 	// If not, it won't store the EBO in it!
@@ -136,13 +209,17 @@ int main() {
 	glm::vec3 lightPos(1.2f, 0.6f, 2.0f);
 	std::vector<Command*> cmds;
 
+	texShaderProg.use();
+	texShaderProg.setInt("myTexture", 0);
+	texShaderProg.setInt("myTexture2", 1);
+
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
 		// Process multiple key/mouse input commands for camera actor per frame
-		inputHandler.processInput(window, cmds);
+		inputHandler.processInput(window, cmds, &texShaderProg);
 		for (auto& cmd : cmds) {
 			cmd->execute(camActor, deltaTime);
 		}
@@ -195,6 +272,19 @@ int main() {
 		// Draw cube light
 		glBindVertexArray(lightCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		texShaderProg.use();
+		model = glm::translate(model, glm::vec3(2.0f, .0f, 1.0f));
+		texShaderProg.setMat4("model", model);
+		texShaderProg.setMat4("view", view);
+		texShaderProg.setMat4("proj", proj);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texID);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texID2);
+		glBindVertexArray(texVAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

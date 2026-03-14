@@ -84,7 +84,7 @@ void Camera::applyGravity(const float& deltaT) {
 
 bool Camera::isGrounded() const { return grounded; }
 
-glm::mat4 Camera::getViewMatrix() {
+glm::mat4 Camera::getViewMatrix() const {
 	return glm::lookAt(getCamPos(), getCamPos() + getCamFront(), getCamUp());
 }
 

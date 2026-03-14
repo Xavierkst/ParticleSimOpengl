@@ -47,7 +47,7 @@ public:
 	void applyGravity(const float& deltaT);
 	bool isGrounded() const;
 
-	glm::mat4 getViewMatrix();
+	glm::mat4 getViewMatrix() const;
 	glm::vec3 getCamPos() const;
 	glm::vec3 getCamFront() const;
 	glm::vec3 getCamUp() const;

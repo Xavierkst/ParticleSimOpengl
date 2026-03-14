@@ -27,3 +27,4 @@ CloseWinCommand::~CloseWinCommand() {}
 void CloseWinCommand::execute(Camera& actor, float deltaTime) {
 	glfwSetWindowShouldClose(window, GL_TRUE);
 }
+
