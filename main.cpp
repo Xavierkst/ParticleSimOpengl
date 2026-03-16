@@ -194,6 +194,19 @@ int main() {
         0, 1, 3, // first triangle
         1, 2, 3  // second triangle
     };
+	glm::vec3 cubePositions[] = {
+		glm::vec3( 0.0f,  0.0f,  0.0f),
+		glm::vec3( 2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3( 2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3( 1.3f, -2.0f, -2.5f),
+		glm::vec3( 1.5f,  2.0f, -2.5f),
+		glm::vec3( 1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
 	unsigned int texVAO, texVBO, texEBO;
 	glGenVertexArrays(1, &texVAO);
 	glBindVertexArray(texVAO);
@@ -212,7 +225,6 @@ int main() {
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
 	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
-
 
 	Shader texShaderProg("texCoord.vert", "texCoord.frag");
 
@@ -290,7 +302,7 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	// light's position in world space
-	glm::vec3 lightPos(1.2f, 0.6f, 2.0f);
+	glm::vec3 lightPos(2.0f, 0.6f, -4.0f);
 	std::vector<Command*> cmds;
 
 	texShaderProg.use();
@@ -328,12 +340,19 @@ int main() {
 		lightingShader.setMat4("proj", proj);
 		lightingShader.setMat4("view", view);
 		lightingShader.setMat4("model", model);
-		lightingShader.setVec3("light.ambient", glm::vec3(0.2f));
-		lightingShader.setVec3("light.diffuse", glm::vec3(0.5f));
+		lightingShader.setVec3("light.ambient", glm::vec3(0.1f));
+		lightingShader.setVec3("light.diffuse", glm::vec3(0.8f));
 		lightingShader.setVec3("light.specular", glm::vec3(1.0f));
-		lightingShader.setVec3("light.position", lightPos);
-		lightingShader.setVec3("viewPos", camActor.getCamPos());
-		lightingShader.setFloat("mat.shininess", 64.0f);
+		lightingShader.setFloat("light.constant", 1.0f);
+		lightingShader.setFloat("light.linear", 0.09f);
+		lightingShader.setFloat("light.quadratic", 0.032f);
+		lightingShader.setVec4("light.lightVector", glm::vec4(lightPos, 1.0f));
+		lightingShader.setVec4("light.position", glm::vec4(camActor.getCamPos(), 1.0f));
+		lightingShader.setVec4("light.direction", glm::vec4(camActor.getCamFront(), 0.0f));
+		lightingShader.setFloat("light.cutOff", glm::radians(12.5f));
+		// lightingShader.setVec4("light.lightVector", -0.2f, -1.0f, -0.3f, .0f);
+		lightingShader.setVec4("viewPos", glm::vec4(camActor.getCamPos(), 1.0f));
+		lightingShader.setFloat("mat.shininess", 32.0f);
 		lightingShader.setInt("mat.diffuse", 0);
 		lightingShader.setInt("mat.specular", 1);
 		lightingShader.setInt("mat.emission", 2);
@@ -342,10 +361,20 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, diffuseMap);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, specularMap);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, emissionMap);
+		// glActiveTexture(GL_TEXTURE2);
+		// glBindTexture(GL_TEXTURE_2D, emissionMap);
 		glBindVertexArray(cubeVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		int i = 0;
+		for (auto& pos : cubePositions) {
+			glm::mat4 model(1.0f);
+			model = glm::translate(model, pos + glm::vec3(.0f, -1.0f, .0f));
+			float angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			lightingShader.setMat4("model", model);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			++i;
+		}
 
 		// Draw light cube object
 		lightSrcShader.use();
