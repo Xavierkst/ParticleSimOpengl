@@ -13,6 +13,7 @@ out vec3 vertColor;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
+uniform float mixValue;
 
 void main() {
 	gl_Position = proj*view*model*vec4(aPos, 1.0f);
