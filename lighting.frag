@@ -48,38 +48,44 @@ void main()
 
 	// Calculate dot prod of surface normal and reverse of lightDir
 	vec4 norm = normalize(Normal);
-	float diff = max(dot(lightDir, norm), 0.0);
-	vec3 diffuse = light.diffuse * diff * texture(mat.diffuse, textureCoords).rgb;
+	// float diff = max(dot(lightDir, norm), 0.0);
+	// vec3 diffuse = light.diffuse * diff * texture(mat.diffuse, textureCoords).rgb;
 
-	vec4 viewDir = normalize(vec4(-FragPos.xyz, 0.0f));
+	// vec4 viewDir = normalize(vec4(-FragPos.xyz, 0.0f));
 	// reflect fn expect light dir to point from light src to frag position
-	vec4 reflectDir = vec4(reflect(-lightDir, norm).xyz, .0f);
-	float spec = pow(max(0.0, dot(viewDir, reflectDir)), mat.shininess);
-	vec3 specMapComponent = texture(mat.specular, textureCoords).rgb;
-	vec3 specular = light.specular * spec * specMapComponent;
+	// vec4 reflectDir = vec4(reflect(-lightDir, norm).xyz, .0f);
+	// float spec = pow(max(0.0, dot(viewDir, reflectDir)), mat.shininess);
+	// vec3 specMapComponent = texture(mat.specular, textureCoords).rgb;
+	// vec3 specular = light.specular * spec * specMapComponent;
 
 	// Emission map
-	vec3 emissionColor = texture(mat.emission, textureCoords + vec2(0.0f, time)).rgb;
-	vec3 emissionMask = step(vec3(1.0f), vec3(1.0f) - specMapComponent);
-	emissionColor *= emissionMask;
+	// vec3 emissionColor = texture(mat.emission, textureCoords + vec2(0.0f, time)).rgb;
+	// vec3 emissionMask = step(vec3(1.0f), vec3(1.0f) - specMapComponent);
+	// emissionColor *= emissionMask;
 
 	// Attenuation
-	float dist = length(lightPos - FragPos);
-	float attenuation = 1.0f;
-	if (light.lightVector.w == 1.0f) {
-		attenuation = 1.0f / (light.constant + light.linear * dist + light.quadratic * dist * dist);
-	}
+	// float dist = length(lightPos - FragPos);
+	// float attenuation = 1.0f;
+	// if (light.lightVector.w == 1.0f) {
+	// 	attenuation = 1.0f / (light.constant + light.linear * dist + light.quadratic * dist * dist);
+	// }
 
-	ambient *= attenuation;
-	diffuse *= attenuation;
-	specular *= attenuation;
+	// ambient *= attenuation;
+	// diffuse *= attenuation;
+	// specular *= attenuation;
 
 	// calculate the angle made by fragment and spotDir
 	// if the angle is <= phi (the largest radius for spot light), 
 	// the resulting FragColor should get the contribution from this spot light
 	vec4 color;
-	vec4 slightDir = normalize(view*light.position - FragPos);
-	float cosTheta = max(dot(normalize(view*-light.direction), slightDir), 0.0f);
+	vec4 slightPos = view* light.position;
+	// light direction always points twd light source (convention)
+	vec4 slightDir = normalize(slightPos - FragPos); 
+	vec4 spotDir = normalize(view * -light.direction);
+	// If the cosTheta value is larger than cosPhi value (represented by light.cutOff) then the phi angle
+	// is larger and the fragments are within the spotlight range.
+	float cosTheta = max(dot(normalize(spotDir), slightDir), 0.0f);
+	vec4 viewDir = spotDir;
 
 	if (cosTheta > light.cutOff) {
 		// do lighting calculations
@@ -88,19 +94,24 @@ void main()
 		float spotDiff = max(dot(slightDir, norm), .0f);
 		vec3 spotDiffuse = spotDiff * light.diffuse * texture(mat.diffuse, textureCoords).rgb;
 
-		vec4 spotReflectDir = vec4(normalize(reflect(-slightDir, norm).xyz), 0.0f);
+		vec4 spotReflectDir = vec4(reflect(-slightDir, norm).xyz, 0.0f);
 		float spotSpec = pow(max(dot(spotReflectDir, viewDir), .0f), mat.shininess);
 		vec3 spotSpecular = spotSpec * light.specular * texture(mat.specular, textureCoords).rgb;
-		float spotDist = length(light.position - FragPos);
-		float spotAttenuation = 1.0f/ (light.constant + light.linear * spotDist + light.quadratic * spotDist * spotDist);
+
+		// attenuation
+		float spotDist = length(slightPos - FragPos);
+		float spotAttenuation = 1.0 / (light.constant + (light.linear * spotDist) + (light.quadratic * spotDist * spotDist));
+
+		// spotAmbient *= spotAttenuation;
+		// spotDiffuse *= spotAttenuation;
+		// spotSpecular *= spotAttenuation;
+
 		color = vec4(spotAmbient + spotDiffuse + spotSpecular, 1.0f);
 	} else {
 		// just add ambient light contribution from your spotlight
 		color = vec4(light.ambient * texture(mat.diffuse, textureCoords).rgb, 1.0f);
 	}
 
-
-	vec3 res = diffuse + ambient + specular + color.rgb;// + emissionColor; 
-	
+	vec3 res = color.rgb;// + emissionColor; 
 	FragColor = vec4(res, 1.0f);
 }

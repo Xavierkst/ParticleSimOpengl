@@ -349,7 +349,7 @@ int main() {
 		lightingShader.setVec4("light.lightVector", glm::vec4(lightPos, 1.0f));
 		lightingShader.setVec4("light.position", glm::vec4(camActor.getCamPos(), 1.0f));
 		lightingShader.setVec4("light.direction", glm::vec4(camActor.getCamFront(), 0.0f));
-		lightingShader.setFloat("light.cutOff", glm::radians(12.5f));
+		lightingShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
 		// lightingShader.setVec4("light.lightVector", -0.2f, -1.0f, -0.3f, .0f);
 		lightingShader.setVec4("viewPos", glm::vec4(camActor.getCamPos(), 1.0f));
 		lightingShader.setFloat("mat.shininess", 32.0f);
