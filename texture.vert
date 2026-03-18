@@ -17,7 +17,7 @@ void main()
 	// Read matrix multiplications from R to L, with R being the first transform applied
 	gl_Position = proj*view*model* vec4(aPos, 1.0);
 	// The fragment's position in world space coords 
-	FragPos = view* model * vec4(aPos, 1.0f);
-	Normal = vec4(mat3(transpose(inverse(view*model))) * aNormal, 0.0f);
+	FragPos = model * vec4(aPos, 1.0f);
+	Normal = vec4(mat3(transpose(inverse(model))) * aNormal, 0.0f);
 	textureCoords = aTexCoords;
 }

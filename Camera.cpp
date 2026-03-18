@@ -6,7 +6,7 @@ void Camera::updateCameraVectors() {
 	dir.x = glm::cos(glm::radians(yaw)) * glm::cos(glm::radians(pitch));
 	dir.y = glm::sin(glm::radians(pitch));
 	dir.z = glm::sin(glm::radians(yaw)) * glm::cos(glm::radians(pitch));
-	setCamFront(glm::normalize(dir));
+	setFront(glm::normalize(dir));
 	camRight = glm::normalize(glm::cross(camFront, worldUp));
 	camUp = glm::normalize(glm::cross(camRight, camFront));
 }
@@ -17,20 +17,20 @@ Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 up, float y, float p) 
 }
 
 void Camera::ProcessKeyboard(const CameraMovement dir, const float deltaTime) {
-	glm::vec3 camRight(glm::normalize(glm::cross(getCamFront(), getCamUp())));
+	glm::vec3 camRight(glm::normalize(glm::cross(getFront(), getUp())));
 	velo = SPEED * deltaTime;
 	switch (dir) {
 	case FORWARD:
-		setCamPos(getCamPos() + (velo * glm::vec3(getCamFront().x, .0f, getCamFront().z)));
+		setPos(getPos() + (velo * glm::vec3(getFront().x, .0f, getFront().z)));
 		break;
 	case BACKWARD:
-		setCamPos(getCamPos() - (velo * glm::vec3(getCamFront().x, .0f, getCamFront().z)));
+		setPos(getPos() - (velo * glm::vec3(getFront().x, .0f, getFront().z)));
 		break;
 	case LEFT:
-		setCamPos(getCamPos() - (velo * glm::vec3(camRight.x, .0f, camRight.z)));
+		setPos(getPos() - (velo * glm::vec3(camRight.x, .0f, camRight.z)));
 		break;
 	case RIGHT:
-		setCamPos(getCamPos() + (velo * glm::vec3(camRight.x, .0f, camRight.z)));
+		setPos(getPos() + (velo * glm::vec3(camRight.x, .0f, camRight.z)));
 		break;
 	case UP: {
 		veloY = SPEED;
@@ -70,7 +70,7 @@ void Camera::ProcessMouseScroll(const float yoffset) {
 
 void Camera::applyGravity(const float& deltaT) {
 	if (!grounded) {
-		glm::vec3 newPos = getCamPos() + veloY * deltaT * worldUp;
+		glm::vec3 newPos = getPos() + veloY * deltaT * worldUp;
 		veloY += gravity * deltaT;
 		// clamp new position to never go below ground plane + set vertical velo back to 0
 		if (newPos.y <= .0f) {
@@ -78,25 +78,25 @@ void Camera::applyGravity(const float& deltaT) {
 			veloY = .0f;
 			grounded = true;
 		}
-		setCamPos(newPos);
+		setPos(newPos);
 	}
 }
 
 bool Camera::isGrounded() const { return grounded; }
 
 glm::mat4 Camera::getViewMatrix() const {
-	return glm::lookAt(getCamPos(), getCamPos() + getCamFront(), getCamUp());
+	return glm::lookAt(getPos(), getPos() + getFront(), getUp());
 }
 
-glm::vec3 Camera::getCamPos() const {
+glm::vec3 Camera::getPos() const {
 	return camPos;
 }
 
-glm::vec3 Camera::getCamFront() const {
+glm::vec3 Camera::getFront() const {
 	return camFront;
 }
 
-glm::vec3 Camera::getCamUp() const {
+glm::vec3 Camera::getUp() const {
 	return camUp;
 }
 
@@ -108,14 +108,14 @@ void Camera::setFov(const float fv) {
 	fov = fv;
 }
 
-void Camera::setCamPos(const glm::vec3 pos) {
+void Camera::setPos(const glm::vec3 pos) {
 	camPos = pos;
 }
 
-void Camera::setCamFront(const glm::vec3 target) {
+void Camera::setFront(const glm::vec3 target) {
 	camFront = target;
 }
 
-void Camera::setCamUp(const glm::vec3 up) {
+void Camera::setUp(const glm::vec3 up) {
 	camUp = up;
 }

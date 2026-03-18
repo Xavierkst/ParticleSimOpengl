@@ -48,15 +48,15 @@ public:
 	bool isGrounded() const;
 
 	glm::mat4 getViewMatrix() const;
-	glm::vec3 getCamPos() const;
-	glm::vec3 getCamFront() const;
-	glm::vec3 getCamUp() const;
+	glm::vec3 getPos() const;
+	glm::vec3 getFront() const;
+	glm::vec3 getUp() const;
 	float getFov() const;
 
 	void setFov(const float fv);
-	void setCamPos(const glm::vec3 pos);
-	void setCamFront(const glm::vec3 target);
-	void setCamUp(const glm::vec3 up);
+	void setPos(const glm::vec3 pos);
+	void setFront(const glm::vec3 target);
+	void setUp(const glm::vec3 up);
 };
 
 #endif // Camera_H

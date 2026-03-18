@@ -14,9 +14,11 @@ struct Light {
 
 	vec4 direction;
 	vec4 position;
-	float cutOff; // this is the cosine of the cutoff angle
+	float cutOff; // cosine of the inner cone
+	float outerCutOff; // cosine of outer cone
 
 	vec4 lightVector;
+	vec4 lightVector2;
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
@@ -29,89 +31,74 @@ in vec4 Normal;
 uniform Material mat;
 uniform Light light;
 uniform float time;
+uniform vec4 viewPos;
 
 uniform mat4 proj;
 uniform mat4 view;
 
+vec4 calculateLight(vec4 lightVec);
+
 void main()
 {
-	vec3 ambient = light.ambient * texture(mat.diffuse, textureCoords).rgb;
+	// contribution from pointLight + dirLight
+	vec4 lightColor = calculateLight(light.lightVector);
+	vec4 lightColor2 = calculateLight(light.lightVector2);
+	// contribution from spotLight
+	vec4 spotLightColor = calculateLight(light.position);
 
-	vec4 lightPos = view * light.lightVector;
-	vec4 lightDir  = normalize(lightPos - FragPos);
-	// if (light.lightVector.w == 1.0f) {
-	// 	lightDir  = vec4(vec3(normalize(FragPos - light.lightVector)), 0.0f);
-	// 	dist = length(light.lightVector - FragPos);
-	// } else if (light.lightVector.w == 0.0f) {
-	// 	lightDir = normalize(light.lightVector);
-	// }
-
-	// Calculate dot prod of surface normal and reverse of lightDir
-	vec4 norm = normalize(Normal);
-	// float diff = max(dot(lightDir, norm), 0.0);
-	// vec3 diffuse = light.diffuse * diff * texture(mat.diffuse, textureCoords).rgb;
-
-	// vec4 viewDir = normalize(vec4(-FragPos.xyz, 0.0f));
-	// reflect fn expect light dir to point from light src to frag position
-	// vec4 reflectDir = vec4(reflect(-lightDir, norm).xyz, .0f);
-	// float spec = pow(max(0.0, dot(viewDir, reflectDir)), mat.shininess);
-	// vec3 specMapComponent = texture(mat.specular, textureCoords).rgb;
-	// vec3 specular = light.specular * spec * specMapComponent;
+	// Spotlight soft edges
+	vec4 slightDir = normalize(light.position - FragPos);
+	float cosTheta = dot(normalize(-light.direction), slightDir);
+	float epsilon = light.cutOff - light.outerCutOff;
+	float intensity = clamp((cosTheta - light.outerCutOff) / epsilon, 0.0f, 1.0f);
+	spotLightColor *= intensity;
 
 	// Emission map
-	// vec3 emissionColor = texture(mat.emission, textureCoords + vec2(0.0f, time)).rgb;
-	// vec3 emissionMask = step(vec3(1.0f), vec3(1.0f) - specMapComponent);
-	// emissionColor *= emissionMask;
+	vec3 specMapComponent = texture(mat.specular, textureCoords).rgb;
+	vec3 emissionColor = texture(mat.emission, textureCoords + vec2(0.0f, time)).rgb;
+	vec3 emissionMask = step(vec3(1.0f), vec3(1.0f) - specMapComponent);
+	emissionColor *= emissionMask;
 
-	// Attenuation
-	// float dist = length(lightPos - FragPos);
-	// float attenuation = 1.0f;
-	// if (light.lightVector.w == 1.0f) {
-	// 	attenuation = 1.0f / (light.constant + light.linear * dist + light.quadratic * dist * dist);
-	// }
+	vec3 res = spotLightColor.rgb + lightColor.rgb + lightColor2.rgb;
 
-	// ambient *= attenuation;
-	// diffuse *= attenuation;
-	// specular *= attenuation;
+	FragColor = vec4(res, 1.0f);
+}
 
-	// calculate the angle made by fragment and spotDir
-	// if the angle is <= phi (the largest radius for spot light), 
-	// the resulting FragColor should get the contribution from this spot light
-	vec4 color;
-	vec4 slightPos = view* light.position;
-	// light direction always points twd light source (convention)
-	vec4 slightDir = normalize(slightPos - FragPos); 
-	vec4 spotDir = normalize(view * -light.direction);
-	// If the cosTheta value is larger than cosPhi value (represented by light.cutOff) then the phi angle
-	// is larger and the fragments are within the spotlight range.
-	float cosTheta = max(dot(normalize(spotDir), slightDir), 0.0f);
-	vec4 viewDir = spotDir;
+vec4 calculateLight(vec4 lightVec) {
+	// determine if its directional or spot light
+	vec4 lightPos;
+	vec4 lightDir;
+	if (lightVec.w == 1.0f) {
+		lightPos = lightVec;
+		lightDir = normalize(lightPos - FragPos);
+	} else if (lightVec.w == 0.0f) {
+		lightDir = normalize(lightVec);
+	}
+	vec4 norm = normalize(Normal);
+	// obtain the lightDir and compute ambient, diff, spec
+	vec3 ambient = light.ambient * texture(mat.diffuse, textureCoords).rgb;
 
-	if (cosTheta > light.cutOff) {
-		// do lighting calculations
-		vec3 spotAmbient = light.ambient * texture(mat.diffuse, textureCoords).rgb;
+	float diff = max(dot(lightDir, Normal), 0.0f);
+	vec3 diffuse = light.diffuse * diff * texture(mat.diffuse, textureCoords).rgb;
+	
+	// obtain incoming lightDir and normal, and pass into reflect
+	// Use reflected ray vec and dot with viewDir vec, clamp to 0, and raise to shininess
+	// 
+	vec4 viewDir = normalize(viewPos - FragPos);
+	vec4 reflectedLight = reflect(-lightDir, norm);
+	float spec = pow(max(dot(reflectedLight, viewDir), 0.0f), mat.shininess);
+	vec3 specular = spec * light.specular * texture(mat.specular, textureCoords).rgb;
 
-		float spotDiff = max(dot(slightDir, norm), .0f);
-		vec3 spotDiffuse = spotDiff * light.diffuse * texture(mat.diffuse, textureCoords).rgb;
-
-		vec4 spotReflectDir = vec4(reflect(-slightDir, norm).xyz, 0.0f);
-		float spotSpec = pow(max(dot(spotReflectDir, viewDir), .0f), mat.shininess);
-		vec3 spotSpecular = spotSpec * light.specular * texture(mat.specular, textureCoords).rgb;
-
-		// attenuation
-		float spotDist = length(slightPos - FragPos);
-		float spotAttenuation = 1.0 / (light.constant + (light.linear * spotDist) + (light.quadratic * spotDist * spotDist));
-
-		// spotAmbient *= spotAttenuation;
-		// spotDiffuse *= spotAttenuation;
-		// spotSpecular *= spotAttenuation;
-
-		color = vec4(spotAmbient + spotDiffuse + spotSpecular, 1.0f);
-	} else {
-		// just add ambient light contribution from your spotlight
-		color = vec4(light.ambient * texture(mat.diffuse, textureCoords).rgb, 1.0f);
+	// Computer light attenuation (only when light source is NOT directional)
+	if (lightVec.w == 1.0f) {
+		float dist = length(lightPos - FragPos);
+		float attenuation = 1.0f / (light.constant + light.linear * dist + light.quadratic * dist * dist);
+		ambient *= attenuation;
+		diffuse *= attenuation;
+		specular *= attenuation;
 	}
 
-	vec3 res = color.rgb;// + emissionColor; 
-	FragColor = vec4(res, 1.0f);
+	vec3 result = ambient + diffuse + specular; // + emissionColor;
+
+	return vec4(result, 1.0f);
 }
