@@ -65,7 +65,7 @@ uniform mat4 view;
 vec3 calculateDirLight(DirLight light);
 vec3 calculatePointLight(PointLight light);
 vec3 calculateSpotLight(SpotLight light);
-float calcAttenuation(vec4 lightPos, float constant, float linear, float quadratic);
+float calculateAttenuation(vec4 lightPos, float constant, float linear, float quadratic);
 vec3 phongShading(vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular, vec4 lightDir, vec4 norm);
 
 void main()
@@ -97,7 +97,7 @@ vec3 calculatePointLight(PointLight light) {
 	vec3 result = phongShading(light.ambient, light.diffuse, light.specular, lightDir, norm);
 
 	// Computer light attenuation (only when light source is NOT directional)
-	float attenuation = calcAttenuation(light.position, light.constant, light.linear, light.quadratic);
+	float attenuation = calculateAttenuation(light.position, light.constant, light.linear, light.quadratic);
 	result *= attenuation;
 
 	return result;
@@ -108,7 +108,7 @@ vec3 calculateSpotLight(SpotLight light) {
 	vec4 norm = normalize(Normal);
 	vec3 result = phongShading(light.ambient, light.diffuse, light.specular, lightDir, norm);
 
-	float attenuation = calcAttenuation(light.position, light.constant, light.linear, light.quadratic);
+	float attenuation = calculateAttenuation(light.position, light.constant, light.linear, light.quadratic);
 	result *= attenuation;
 
 	// Spotlight soft edges
@@ -130,7 +130,7 @@ vec3 calculateDirLight(DirLight light) {
 	return result;
 }
 
-float calcAttenuation(vec4 lightPos, float constant, float linear, float quadratic) {
+float calculateAttenuation(vec4 lightPos, float constant, float linear, float quadratic) {
 	float dist = length(lightPos - FragPos);
 	float attenuation = 1.0f / (constant + linear * dist + quadratic * dist * dist);
 	return attenuation;
