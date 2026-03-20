@@ -1,5 +1,5 @@
-#ifndef Camera_H
-#define Camera_H
+#ifndef CAMERA_H
+#define CAMERA_H
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -59,4 +59,4 @@ public:
 	void setUp(const glm::vec3 up);
 };
 
-#endif // Camera_H
+#endif // CAMERA_H
