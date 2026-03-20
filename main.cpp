@@ -1,8 +1,5 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <string>

@@ -4,7 +4,7 @@ Mesh::Mesh(std::vector<Vertex> verts, std::vector<unsigned int> inds, std::vecto
 	setupMesh();
 }
 
-void Mesh::draw(Shader& shader) {
+void Mesh::Draw(Shader& shader) {
 	unsigned int diffuseNum = 1;
 	unsigned int specularNum = 1;
 	// set the textures using a for loop. We have N number of diffuse and M specular textures

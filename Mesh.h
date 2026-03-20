@@ -26,7 +26,7 @@ public:
 	
 	Mesh(std::vector<Vertex> verts, std::vector<unsigned int> inds, std::vector<Texture> texts);
 
-	void draw(Shader& shader);
+	void Draw(Shader& shader);
 
 private:
 	unsigned int VAO, VBO, EBO;
