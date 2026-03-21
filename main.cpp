@@ -6,13 +6,14 @@
 
 #include "Shader.h"
 #include "Camera.h"
-#include "STBFile.h"
 #include "InputHandler.h"
+#include "Model.h"
+#include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-unsigned int loadTexture(const char* filePath);
+unsigned int LoadTexture(const char* fPath);
 
 // Values / Settings
 const unsigned int SCR_WIDTH = 800;
@@ -136,11 +137,11 @@ int main() {
 	Shader texShaderProg("texCoord.vert", "texCoord.frag");
 
 	stbi_set_flip_vertically_on_load(true);
-	unsigned int texID = loadTexture("container.jpg");
-	unsigned int texID2 = loadTexture("awesomeface.png");
-	unsigned int diffuseMap = loadTexture("container2.png");
-	unsigned int specularMap = loadTexture("container2_specular.png");
-	unsigned int emissionMap = loadTexture("matrix.jpg");
+	unsigned int texID = LoadTexture("container.jpg");
+	unsigned int texID2 = LoadTexture("awesomeface.png");
+	unsigned int diffuseMap = LoadTexture("container2.png");
+	unsigned int specularMap = LoadTexture("container2_specular.png");
+	unsigned int emissionMap = LoadTexture("matrix.jpg");
 
 	unsigned int texVAO, texVBO, texEBO;
 	glGenVertexArrays(1, &texVAO);
@@ -230,6 +231,7 @@ int main() {
 	lightingShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
 	lightingShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.0f)));
 	
+	Model model("backpack.obj");
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
 
@@ -354,13 +356,11 @@ void bindArrBuffer(unsigned int& VAO, unsigned int& VBO, int* vertices) {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
 
-unsigned int loadTexture(const char* filePath) {
-
+unsigned int LoadTexture(const char* fPath) {
 	unsigned int textureID;
 	glGenTextures(1, &textureID);
-
 	int width, ht, numColorChannels;
-	unsigned char* data = stbi_load(filePath, &width, &ht, &numColorChannels, 0);
+	unsigned char* data = stbi_load(fPath, &width, &ht, &numColorChannels, 0);
 
 	if (data) {
 		GLenum format;
@@ -388,9 +388,10 @@ unsigned int loadTexture(const char* filePath) {
 
 		stbi_image_free(data);
 	} else {
-	    std::cout << "Texture failed to load at path: " << filePath << std::endl;
-        stbi_image_free(data);	
+		std::cout << "Texture failed to load at path: " << fPath << std::endl;
+		stbi_image_free(data);
 	}
 
 	return textureID;
 }
+

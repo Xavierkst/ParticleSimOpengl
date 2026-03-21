@@ -1,5 +1,5 @@
-#ifndef VERTEX_H
-#define VERTEX_H
+#ifndef MESH_H
+#define MESH_H
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -16,6 +16,7 @@ struct Vertex {
 struct Texture {
 	unsigned int ID;
 	std::string type;
+	std::string path;
 };
 
 class Mesh {
@@ -34,4 +35,4 @@ private:
 	void setupMesh();
 };
 
-#endif // VERTEX_H
+#endif // MESH_H
