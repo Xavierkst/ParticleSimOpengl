@@ -2,8 +2,9 @@
 out vec4 FragColor;
 
 struct Material {
-	sampler2D diffuse;
-	sampler2D specular;
+	sampler2D texture_diffuse0;
+	sampler2D texture_specular0;
+	sampler2D texture_normal0;
 	sampler2D emission;
 	float shininess;
 };
@@ -82,7 +83,7 @@ void main()
 	vec3 spotLightColor = calculateSpotLight(spotLight);
 
 	// Emission map
-	vec3 specMapComponent = texture(mat.specular, textureCoords).rgb;
+	vec3 specMapComponent = texture(mat.texture_specular0, textureCoords).rgb;
 	vec3 emissionColor = texture(mat.emission, textureCoords + vec2(0.0f, time)).rgb;
 	vec3 emissionMask = step(vec3(1.0f), vec3(1.0f) - specMapComponent);
 	emissionColor *= emissionMask;
@@ -138,17 +139,17 @@ float calculateAttenuation(vec4 lightPos, float constant, float linear, float qu
 
 vec3 phongShading(vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular, vec4 lightDir, vec4 norm) {
 	// obtain the lightDir and compute ambient, diff, spec
-	vec3 ambient = lightAmbient * texture(mat.diffuse, textureCoords).rgb;
+	vec3 ambient = lightAmbient * texture(mat.texture_diffuse0, textureCoords).rgb;
 
 	float diff = max(dot(lightDir, norm), 0.0f);
-	vec3 diffuse = lightDiffuse * diff * texture(mat.diffuse, textureCoords).rgb;
+	vec3 diffuse = lightDiffuse * diff * texture(mat.texture_diffuse0, textureCoords).rgb;
 	
 	// obtain incoming lightDir and normal, and pass into reflect
 	// Use reflected ray vec and dot with viewDir vec, clamp to 0, and raise to shininess
 	vec4 viewDir = normalize(viewPos - FragPos);
 	vec4 reflectedLight = reflect(-lightDir, norm);
 	float spec = pow(max(dot(reflectedLight, viewDir), 0.0f), mat.shininess);
-	vec3 specular = spec * lightSpecular * texture(mat.specular, textureCoords).rgb;
+	vec3 specular = spec * lightSpecular * texture(mat.texture_specular0, textureCoords).rgb;
 
 	return ambient + diffuse + specular;
 }

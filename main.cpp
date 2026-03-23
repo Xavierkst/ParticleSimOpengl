@@ -134,7 +134,6 @@ int main() {
 	
 	Shader lightingShader("texture.vert", "lighting.frag");
 	Shader lightSrcShader("texture.vert", "lightSource.frag");
-	Shader texShaderProg("texCoord.vert", "texCoord.frag");
 
 	stbi_set_flip_vertically_on_load(true);
 	unsigned int texID = LoadTexture("container.jpg");
@@ -194,13 +193,10 @@ int main() {
 	// light's position in world space
 	glm::vec3 lightPos(2.0f, 0.6f, -4.0f);
 	glm::vec3 lightColor(1.0f);
-	texShaderProg.use();
-	texShaderProg.setInt("myTexture", 0);
-	texShaderProg.setInt("myTexture2", 1);
 	lightingShader.use();
 	lightingShader.setFloat("mat.shininess", 32.0f);
-	lightingShader.setInt("mat.diffuse", 0);
-	lightingShader.setInt("mat.specular", 1);
+	lightingShader.setInt("mat.texture_diffuse0", 0);
+	lightingShader.setInt("mat.texture_specular0", 1);
 	lightingShader.setInt("mat.emission", 2);
 	
 	for (int i = 0; i < 4; ++i) {
@@ -231,7 +227,7 @@ int main() {
 	lightingShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
 	lightingShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.0f)));
 	
-	Model model("backpack.obj");
+	Model backpackModel("./backpack.obj");
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
 
@@ -241,7 +237,7 @@ int main() {
 		lastFrame = currentFrame;
 
 		// Process multiple key/mouse input commands for camera actor per frame
-		inputHandler.processInput(window, cmds, &texShaderProg);
+		inputHandler.processInput(window, cmds);
 		for (auto& cmd : cmds) {
 			cmd->execute(camActor, deltaTime);
 		}
@@ -252,6 +248,7 @@ int main() {
 		
 		// Ensure your order or transform is SRT: Scale, rotate, then translate
 		// if you tried someth like translate bef scale, you'll scale the translation by the same amt
+
 
 		lightingShader.use();
 		// Draw cube object
@@ -267,24 +264,33 @@ int main() {
 		lightingShader.setVec4("viewPos", glm::vec4(camActor.getPos(), 1.0f));
 		lightingShader.setFloat("time", currentFrame);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diffuseMap);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, specularMap);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, emissionMap);
-		glBindVertexArray(cubeVAO);
+		glm::mat4 backpackModelMat = glm::translate(model, glm::vec3(0.0, -0.7f, 0.0f));
+		backpackModelMat = glm::scale(backpackModelMat, glm::vec3(0.4f));
+		lightingShader.setMat4("model", backpackModelMat);
+		backpackModel.Draw(lightingShader);
 
-		int i = 0;
-		for (auto& pos : cubePositions) {
-			glm::mat4 model(1.0f);
-			model = glm::translate(model, pos + glm::vec3(.0f, -1.0f, .0f));
-			float angle = 20.0f * i;
-			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-			lightingShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-			++i;
-		}
+		lightingShader.use();
+		lightingShader.setMat4("model", model);
+
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, diffuseMap);
+		// glActiveTexture(GL_TEXTURE1);
+		// glBindTexture(GL_TEXTURE_2D, specularMap);
+		// glActiveTexture(GL_TEXTURE2);
+		// glBindTexture(GL_TEXTURE_2D, emissionMap);
+		// glBindVertexArray(cubeVAO);
+
+		// int i = 0;
+		// for (auto& pos : cubePositions) {
+		// 	glm::mat4 model(1.0f);
+		// 	model = glm::translate(model, pos + glm::vec3(.0f, -1.0f, .0f));
+		// 	float angle = 20.0f * i;
+		// 	model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+		// 	lightingShader.setMat4("model", model);
+		// 	glDrawArrays(GL_TRIANGLES, 0, 36);
+		// 	++i;
+		// }
+
 
 		// Draw light cube object
 		lightSrcShader.use();
@@ -299,6 +305,7 @@ int main() {
 			lightSrcShader.setMat4("model", lightModel);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
+
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

@@ -23,6 +23,7 @@ void Model::loadModel(std::string path) {
 		return;
 	}
 
+	stbi_set_flip_vertically_on_load(true);
 	directory = path.substr(0, path.find_last_of('/'));
 	processNode(scene->mRootNode, scene);
 }
@@ -46,14 +47,17 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 
 	for (int i = 0; i < mesh->mNumVertices; ++i) {
 		Vertex vertex;
-		// vertex.Position
+		// vertex position
 		aiVector3D position = mesh->mVertices[i];
 		vertex.Position = glm::vec3(position.x, position.y, position.z);
+
+		// vertex normals
 		if (mesh->HasNormals()) {
 			aiVector3D normal = mesh->mNormals[i];
 			vertex.Normal = glm::vec3(normal.x, normal.y, normal.z);
 		}
-		// Check if the mesh contains texture coords
+
+		// texture coords
 		if (mesh->mTextureCoords[0]) {
 			aiVector3D textureCoords = mesh->mTextureCoords[0][i];
 			vertex.TexCoords = glm::vec2(textureCoords.x, textureCoords.y);
@@ -61,10 +65,11 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 		else {
 			vertex.TexCoords = glm::vec2(0.0f);
 		}
+
 		vertices.push_back(vertex);
 	}
 
-	// Process indices
+	// indices for EBO
 	for (int i = 0; i < mesh->mNumFaces; ++i) {
 		aiFace face = mesh->mFaces[i];
 		for (int j = 0; j < face.mNumIndices; ++j) {
@@ -81,12 +86,15 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 		std::vector<Texture> normalMaps = loadMaterialTextures(mat, aiTextureType_NORMALS, "texture_normals");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+		// ambient??
 	}
 
 	return Mesh(vertices, indices, textures);
 }
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName) {
+	aiColor3D color;
+	mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
 	std::vector<Texture> textures;
 	for (int i = 0; i < mat->GetTextureCount(type); ++i) {
 		aiString fileName;
