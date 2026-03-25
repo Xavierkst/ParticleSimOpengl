@@ -112,18 +112,62 @@ int main() {
         0, 1, 3, // first triangle
         1, 2, 3  // second triangle
     };
-	glm::vec3 cubePositions[] = {
-		glm::vec3( 0.0f,  0.0f,  0.0f),
-		glm::vec3( 2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f, -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3( 2.4f, -0.4f, -3.5f),
-		glm::vec3(-1.7f,  3.0f, -7.5f),
-		glm::vec3( 1.3f, -2.0f, -2.5f),
-		glm::vec3( 1.5f,  2.0f, -2.5f),
-		glm::vec3( 1.5f,  0.2f, -1.5f),
-		glm::vec3(-1.3f,  1.0f, -1.5f)
-	};
+
+    float cubeVertices[] = {
+        // positions          // texture Coords
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    };
+
+    float planeVertices[] = {
+        // positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+         5.0f, -0.5f, -5.0f,  2.0f, 2.0f								
+    };
 
 	glm::vec3 pointLightPositions[] = {
 		glm::vec3( 0.7f,  0.2f,  2.0f),
@@ -134,6 +178,7 @@ int main() {
 	
 	Shader lightingShader("texture.vert", "lighting.frag");
 	Shader lightSrcShader("texture.vert", "lightSource.frag");
+	Shader depthTestShader("depthTest.vert", "depthTest.frag");
 
 	stbi_set_flip_vertically_on_load(true);
 	unsigned int texID = LoadTexture("container.jpg");
@@ -141,54 +186,45 @@ int main() {
 	unsigned int diffuseMap = LoadTexture("container2.png");
 	unsigned int specularMap = LoadTexture("container2_specular.png");
 	unsigned int emissionMap = LoadTexture("matrix.jpg");
+	unsigned int metalTex = LoadTexture("textures/metal.png");
+	unsigned int marbleTex = LoadTexture("textures/marble.jpg");
 
-	unsigned int texVAO, texVBO, texEBO;
-	glGenVertexArrays(1, &texVAO);
-	glBindVertexArray(texVAO);
-	// note: always bind buffer before passing in buffer data
-	glGenBuffers(1, &texVBO);
-	glGenBuffers(1, &texEBO);
-	glBindBuffer(GL_ARRAY_BUFFER, texVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, texEBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	unsigned int cubeVAO, cubeVBO;
+	glGenVertexArrays(1, &cubeVAO);
+	glBindVertexArray(cubeVAO);
+	// always bind buffer before passing in buffer data
+	glGenBuffers(1, &cubeVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
-	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
 
-	// make sure you don't unbind an EBO b4 you unbind the VAO. 
-	// If not, it won't store the EBO in it!
-
-	unsigned int cubeVAO, VBO;
-	glGenVertexArrays(1, &cubeVAO);
-	glGenBuffers(1, &VBO);
-	// glGenBuffers(1, &EBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);;
-	// position attribute
-	glBindVertexArray(cubeVAO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	unsigned int planeVAO, planeVBO;
+	glGenVertexArrays(1, &planeVAO);
+	glBindVertexArray(planeVAO);
+	glGenBuffers(1, &planeVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	glBindVertexArray(0);
 
 	// Set up VAO for light source, use same VBO
-	unsigned int lightCubeVAO;
+	unsigned int lightCubeVAO, VBO;
 	glGenVertexArrays(1, &lightCubeVAO);
+	glGenBuffers(1, &VBO);
 	glBindVertexArray(lightCubeVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);;
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glEnable(GL_DEPTH_TEST);
 
 	// light's position in world space
 	glm::vec3 lightPos(2.0f, 0.6f, -4.0f);
@@ -227,9 +263,16 @@ int main() {
 	lightingShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
 	lightingShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.0f)));
 	
-	Model backpackModel("./backpack.obj");
+	// Model backpackModel("./backpack.obj");
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
+
+	glEnable(GL_DEPTH_TEST);
+	// Disallow OpenGL from updating the depth each frame after it computes depth test for every fragment. 
+	// This makes the depth buffer read-only.
+	// (its supposed to be able to update the depth buffer if a fragment passes the depth test)
+	// glDepthMask(GL_FALSE);
+	glDepthFunc(GL_LESS);
 
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -248,8 +291,6 @@ int main() {
 		
 		// Ensure your order or transform is SRT: Scale, rotate, then translate
 		// if you tried someth like translate bef scale, you'll scale the translation by the same amt
-
-
 		lightingShader.use();
 		// Draw cube object
 		glm::mat4 proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
@@ -263,49 +304,43 @@ int main() {
 		lightingShader.setVec4("spotLight.direction", glm::vec4(camActor.getFront(), 0.0f));
 		lightingShader.setVec4("viewPos", glm::vec4(camActor.getPos(), 1.0f));
 		lightingShader.setFloat("time", currentFrame);
+		
+		// glm::mat4 backpackModelMat = glm::translate(model, glm::vec3(0.0, -0.7f, 0.0f));
+		// backpackModelMat = glm::scale(backpackModelMat, glm::vec3(0.4f));
+		// lightingShader.setMat4("model", backpackModelMat);
+		// backpackModel.Draw(lightingShader);
 
-		glm::mat4 backpackModelMat = glm::translate(model, glm::vec3(0.0, -0.7f, 0.0f));
-		backpackModelMat = glm::scale(backpackModelMat, glm::vec3(0.4f));
-		lightingShader.setMat4("model", backpackModelMat);
-		backpackModel.Draw(lightingShader);
+		depthTestShader.use();
+		depthTestShader.setMat4("model", model);
+		depthTestShader.setMat4("view", view);
+		depthTestShader.setMat4("proj", proj);
+		depthTestShader.setInt("tex1", 0);
 
-		lightingShader.use();
-		lightingShader.setMat4("model", model);
+		// floor		
+		model = glm::mat4(1.0f);
+		glBindVertexArray(planeVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, metalTex);
+		depthTestShader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, diffuseMap);
-		// glActiveTexture(GL_TEXTURE1);
-		// glBindTexture(GL_TEXTURE_2D, specularMap);
-		// glActiveTexture(GL_TEXTURE2);
-		// glBindTexture(GL_TEXTURE_2D, emissionMap);
-		// glBindVertexArray(cubeVAO);
+		glBindVertexArray(cubeVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, marbleTex);
+		
+		// cube 2
+		model = glm::mat4(1.0f);
+	    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+		depthTestShader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		// int i = 0;
-		// for (auto& pos : cubePositions) {
-		// 	glm::mat4 model(1.0f);
-		// 	model = glm::translate(model, pos + glm::vec3(.0f, -1.0f, .0f));
-		// 	float angle = 20.0f * i;
-		// 	model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-		// 	lightingShader.setMat4("model", model);
-		// 	glDrawArrays(GL_TRIANGLES, 0, 36);
-		// 	++i;
-		// }
+		// cube 1
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		depthTestShader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-
-		// Draw light cube object
-		lightSrcShader.use();
-		glBindVertexArray(lightCubeVAO);
-		lightSrcShader.setMat4("view", view);
-		lightSrcShader.setMat4("proj", proj);
-		lightSrcShader.setVec3("lightColor", glm::vec3(1.0f));
-		for (auto& pos : pointLightPositions) {
-			glm::mat4 lightModel(1.0f);
-			lightModel = glm::translate(lightModel, pos);
-			lightModel = glm::scale(lightModel, glm::vec3(0.2f));
-			lightSrcShader.setMat4("model", lightModel);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
-
+		glBindVertexArray(0);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -316,6 +351,7 @@ int main() {
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
 	glDeleteVertexArrays(1, &cubeVAO);
+	glDeleteVertexArrays(1, &planeVAO);
 	glDeleteVertexArrays(1, &lightCubeVAO);
 	glDeleteBuffers(1, &VBO);
 
