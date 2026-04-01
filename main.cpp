@@ -179,6 +179,7 @@ int main() {
 	Shader lightingShader("texture.vert", "lighting.frag");
 	Shader lightSrcShader("texture.vert", "lightSource.frag");
 	Shader depthTestShader("depthTest.vert", "depthTest.frag");
+	Shader stencilTestShader("depthTest.vert", "stencilTest.frag");
 
 	stbi_set_flip_vertically_on_load(true);
 	unsigned int texID = LoadTexture("container.jpg");
@@ -267,12 +268,14 @@ int main() {
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
 
-	glEnable(GL_DEPTH_TEST);
 	// Disallow OpenGL from updating the depth each frame after it computes depth test for every fragment. 
 	// This makes the depth buffer read-only.
 	// (its supposed to be able to update the depth buffer if a fragment passes the depth test)
 	// glDepthMask(GL_FALSE);
+	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
+
+	glEnable(GL_STENCIL_TEST);
 
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -287,28 +290,31 @@ int main() {
 		cmds.clear();
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 		// Ensure your order or transform is SRT: Scale, rotate, then translate
 		// if you tried someth like translate bef scale, you'll scale the translation by the same amt
-		lightingShader.use();
+		// lightingShader.use();
 		// Draw cube object
 		glm::mat4 proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
 		glm::mat4 view = camActor.getViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
-		lightingShader.setMat4("proj", proj);
-		lightingShader.setMat4("view", view);
-		lightingShader.setMat4("model", model);
+		// lightingShader.setMat4("proj", proj);
+		// lightingShader.setMat4("view", view);
+		// lightingShader.setMat4("model", model);
 
-		lightingShader.setVec4("spotLight.position", glm::vec4(camActor.getPos(), 1.0f));
-		lightingShader.setVec4("spotLight.direction", glm::vec4(camActor.getFront(), 0.0f));
-		lightingShader.setVec4("viewPos", glm::vec4(camActor.getPos(), 1.0f));
-		lightingShader.setFloat("time", currentFrame);
+		// lightingShader.setVec4("spotLight.position", glm::vec4(camActor.getPos(), 1.0f));
+		// lightingShader.setVec4("spotLight.direction", glm::vec4(camActor.getFront(), 0.0f));
+		// lightingShader.setVec4("viewPos", glm::vec4(camActor.getPos(), 1.0f));
+		// lightingShader.setFloat("time", currentFrame);
 		
 		// glm::mat4 backpackModelMat = glm::translate(model, glm::vec3(0.0, -0.7f, 0.0f));
 		// backpackModelMat = glm::scale(backpackModelMat, glm::vec3(0.4f));
 		// lightingShader.setMat4("model", backpackModelMat);
 		// backpackModel.Draw(lightingShader);
+		glEnable(GL_DEPTH_TEST);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 		depthTestShader.use();
 		depthTestShader.setMat4("model", model);
@@ -316,29 +322,75 @@ int main() {
 		depthTestShader.setMat4("proj", proj);
 		depthTestShader.setInt("tex1", 0);
 
+		// prevent floor from writing to stencil buffer
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0x00); 
 		// floor		
 		model = glm::mat4(1.0f);
+		depthTestShader.setMat4("model", model);
 		glBindVertexArray(planeVAO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, metalTex);
-		depthTestShader.setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		glBindVertexArray(cubeVAO);
+		// render cube 1, render bigger stencil cube 1
+		// clear stencil buffer bits, render cube 2 (enabling write to stencil buffer), render bigger stencil cube 2
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, marbleTex);
-		
-		// cube 2
-		model = glm::mat4(1.0f);
-	    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-		depthTestShader.setMat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glStencilMask(0xFF);
 
 		// cube 1
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
 		depthTestShader.setMat4("model", model);
+		glBindVertexArray(cubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// cube 1 borders
+		glStencilMask(0x00);
+		glDisable(GL_DEPTH_TEST);
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		stencilTestShader.use();
+		stencilTestShader.setMat4("view", view);
+		stencilTestShader.setMat4("proj", proj);
+		float scaleFactor = 1.1f;
+		model = glm::mat4(1.0f);
+	    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(scaleFactor));
+		stencilTestShader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		glStencilMask(0xFF);
+		glClear(GL_STENCIL_BUFFER_BIT);
+
+		// cube 2
+		glEnable(GL_DEPTH_TEST);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		depthTestShader.use();
+		model = glm::mat4(1.0f);
+	    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		depthTestShader.setMat4("model", model);
+		depthTestShader.setMat4("view", view);
+		depthTestShader.setMat4("proj", proj);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// cube 2 borders
+		glDisable(GL_DEPTH_TEST);
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		stencilTestShader.use();
+		model = glm::mat4(1.0f);
+	    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		model = glm::scale(model, glm::vec3(scaleFactor));
+		stencilTestShader.setMat4("model", model);
+		stencilTestShader.setMat4("view", view);
+		stencilTestShader.setMat4("proj", proj);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// Reset stencil mask to 0xFF if not the stencil buffer will remain unwrite-able 
+		// due to stencil mask 0x00 preventing stencil buffer bit-clearing operation as well
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 
 		glBindVertexArray(0);
 
