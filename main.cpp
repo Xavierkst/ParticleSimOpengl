@@ -1,3 +1,4 @@
+#include <map>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -174,14 +175,41 @@ int main() {
 		glm::vec3( 2.3f, -3.3f, -4.0f),
 		glm::vec3(-4.0f,  2.0f, -12.0f),
 		glm::vec3( 0.0f,  0.0f, -3.0f)
-	};  
+	};
 	
-	Shader lightingShader("texture.vert", "lighting.frag");
-	Shader lightSrcShader("texture.vert", "lightSource.frag");
+	float winVertices[] = {
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+	};
+
+	float transparentVertices[] = {
+        // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+        1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
+	std::vector<glm::vec3> windows {
+        glm::vec3(-1.5f, 0.0f, -0.48f),
+        glm::vec3( 1.5f, 0.0f, 0.51f),
+        glm::vec3( 0.0f, 0.0f, 0.7f),
+        glm::vec3(-0.3f, 0.0f, -2.3f),
+        glm::vec3( 0.5f, 0.0f, -0.6f)
+    };
+
+	std::vector<glm::vec3> vegetation;
+	vegetation.push_back(glm::vec3(-1.5f,  0.0f, -0.48f));
+	vegetation.push_back(glm::vec3( 1.5f,  0.0f,  0.51f));
+	vegetation.push_back(glm::vec3( 0.0f,  0.0f,  0.7f));
+	vegetation.push_back(glm::vec3(-0.3f,  0.0f, -2.3f));
+	vegetation.push_back(glm::vec3( 0.5f,  0.0f, -0.6f));  
+
+	Shader phongShader("texture.vert", "phongShading.frag");
 	Shader depthTestShader("depthTest.vert", "depthTest.frag");
 	Shader stencilTestShader("depthTest.vert", "stencilTest.frag");
 
-	stbi_set_flip_vertically_on_load(true);
 	unsigned int texID = LoadTexture("container.jpg");
 	unsigned int texID2 = LoadTexture("awesomeface.png");
 	unsigned int diffuseMap = LoadTexture("container2.png");
@@ -189,6 +217,21 @@ int main() {
 	unsigned int emissionMap = LoadTexture("matrix.jpg");
 	unsigned int metalTex = LoadTexture("textures/metal.png");
 	unsigned int marbleTex = LoadTexture("textures/marble.jpg");
+	unsigned int windowTex = LoadTexture("blending_transparent_window.png");
+	unsigned int grassTex = LoadTexture("grass.png");
+
+	unsigned int transparentVAO, transparentVBO;
+	glGenBuffers(1, &transparentVBO);
+	glGenVertexArrays(1, &transparentVAO);
+	glBindVertexArray(transparentVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glBindVertexArray(0);
+
 
 	unsigned int cubeVAO, cubeVBO;
 	glGenVertexArrays(1, &cubeVAO);
@@ -230,41 +273,8 @@ int main() {
 	// light's position in world space
 	glm::vec3 lightPos(2.0f, 0.6f, -4.0f);
 	glm::vec3 lightColor(1.0f);
-	lightingShader.use();
-	lightingShader.setFloat("mat.shininess", 32.0f);
-	lightingShader.setInt("mat.texture_diffuse0", 0);
-	lightingShader.setInt("mat.texture_specular0", 1);
-	lightingShader.setInt("mat.emission", 2);
 	
-	for (int i = 0; i < 4; ++i) {
-		lightingShader.setVec3("pointLights[" + std::to_string(i) + "].ambient", glm::vec3(0.1f));
-		lightingShader.setVec3("pointLights[" + std::to_string(i) + "].diffuse", glm::vec3(0.8f));
-		lightingShader.setVec3("pointLights[" + std::to_string(i) + "].specular", glm::vec3(1.0f));
-		lightingShader.setFloat("pointLights[" + std::to_string(i) + "].constant", 1.0f);
-		lightingShader.setFloat("pointLights[" + std::to_string(i) + "].linear", 0.09f);
-		lightingShader.setFloat("pointLights[" + std::to_string(i) + "].quadratic", 0.032f);
-		lightingShader.setVec4("pointLights[" + std::to_string(i) + "].position", glm::vec4(pointLightPositions[i], 1.0f));
-	}
-
-	lightingShader.setVec3("dirLight.ambient", glm::vec3(0.1f));
-	lightingShader.setVec3("dirLight.diffuse", glm::vec3(0.8f));
-	lightingShader.setVec3("dirLight.specular", glm::vec3(1.0f));
-	lightingShader.setFloat("dirLight.constant", 1.0f);
-	lightingShader.setFloat("dirLight.linear", 0.09f);
-	lightingShader.setFloat("dirLight.quadratic", 0.032f);
-	// lightingShader.setVec4("dirLight.direction", glm::vec4(-2.0, -8.0, 1.0f, 0.0f)); //  -0.2f, -1.0f, -0.3f
-	lightingShader.setVec4("dirLight.direction", glm::vec4(-0.2f, -1.0f, -0.3f, 0.0f)); //  -0.2f, -1.0f, -0.3f
-
-	lightingShader.setVec3("spotLight.ambient", glm::vec3(0.1f));
-	lightingShader.setVec3("spotLight.diffuse", glm::vec3(0.8f));
-	lightingShader.setVec3("spotLight.specular", glm::vec3(1.0f));
-	lightingShader.setFloat("spotLight.constant", 1.0f);
-	lightingShader.setFloat("spotLight.linear", 0.09f);
-	lightingShader.setFloat("spotLight.quadratic", 0.032f);
-	lightingShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
-	lightingShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.0f)));
-	
-	// Model backpackModel("./backpack.obj");
+	// Model backpackModel("./textures/BackpackModel/backpack.obj");
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
 
@@ -272,10 +282,14 @@ int main() {
 	// This makes the depth buffer read-only.
 	// (its supposed to be able to update the depth buffer if a fragment passes the depth test)
 	// glDepthMask(GL_FALSE);
+	glEnable(GL_BLEND);
+	// 1st arg is src factor, 2nd is dest factor
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	glEnable(GL_STENCIL_TEST);
+	// glEnable(GL_STENCIL_TEST);
+	std::map<float, glm::vec3> sorted;
 
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -294,24 +308,12 @@ int main() {
 
 		// Ensure your order or transform is SRT: Scale, rotate, then translate
 		// if you tried someth like translate bef scale, you'll scale the translation by the same amt
-		// lightingShader.use();
+		// phongShader.use();
 		// Draw cube object
 		glm::mat4 proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
 		glm::mat4 view = camActor.getViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
-		// lightingShader.setMat4("proj", proj);
-		// lightingShader.setMat4("view", view);
-		// lightingShader.setMat4("model", model);
 
-		// lightingShader.setVec4("spotLight.position", glm::vec4(camActor.getPos(), 1.0f));
-		// lightingShader.setVec4("spotLight.direction", glm::vec4(camActor.getFront(), 0.0f));
-		// lightingShader.setVec4("viewPos", glm::vec4(camActor.getPos(), 1.0f));
-		// lightingShader.setFloat("time", currentFrame);
-		
-		// glm::mat4 backpackModelMat = glm::translate(model, glm::vec3(0.0, -0.7f, 0.0f));
-		// backpackModelMat = glm::scale(backpackModelMat, glm::vec3(0.4f));
-		// lightingShader.setMat4("model", backpackModelMat);
-		// backpackModel.Draw(lightingShader);
 		glEnable(GL_DEPTH_TEST);
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -359,7 +361,7 @@ int main() {
 	    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(scaleFactor));
 		stencilTestShader.setMat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		// glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		glStencilMask(0xFF);
 		glClear(GL_STENCIL_BUFFER_BIT);
@@ -376,7 +378,7 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// cube 2 borders
-		glDisable(GL_DEPTH_TEST);
+		// glDisable(GL_DEPTH_TEST);
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 		stencilTestShader.use();
 		model = glm::mat4(1.0f);
@@ -385,12 +387,33 @@ int main() {
 		stencilTestShader.setMat4("model", model);
 		stencilTestShader.setMat4("view", view);
 		stencilTestShader.setMat4("proj", proj);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		// glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// Reset stencil mask to 0xFF if not the stencil buffer will remain unwrite-able 
 		// due to stencil mask 0x00 preventing stencil buffer bit-clearing operation as well
 		glStencilMask(0xFF);
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+
+		depthTestShader.use();
+		glBindVertexArray(transparentVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, windowTex);
+
+		// sort the windows by increasing dist to the camera
+		for (auto& windowPos : windows) {
+			float dist = glm::length(camActor.getPos() - windowPos);
+			sorted[dist] = windowPos;
+		}
+
+		// sorted distances are from closest to farthest--render farthest transparent windows first
+		for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
+			glm::mat4 transpModel(1.0f);
+			transpModel = glm::translate(transpModel, it->second);
+			// grab mat4 uniform for this mat4 variable name, and update its value with new mat4 data
+			depthTestShader.setMat4("model", transpModel);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
+		sorted.clear();
 
 		glBindVertexArray(0);
 
@@ -473,10 +496,9 @@ unsigned int LoadTexture(const char* fPath) {
 		// send the texture/lighting map data to the GPU + gen mipmap for it
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, ht, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
-
 		// sort what happens if tex coords go beyond range [0, 1.0]
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
 		// set how to choose + sample mipmaps to render objs that are far away
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
