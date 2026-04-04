@@ -52,11 +52,15 @@ public:
 	glm::vec3 getFront() const;
 	glm::vec3 getUp() const;
 	float getFov() const;
+	float getYaw() const;
+	float getPitch() const;
 
 	void setFov(const float fv);
 	void setPos(const glm::vec3 pos);
 	void setFront(const glm::vec3 target);
 	void setUp(const glm::vec3 up);
+	void setYaw(const float y);
+	void setPitch(const float p);
 };
 
 #endif // CAMERA_H

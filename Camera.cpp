@@ -104,6 +104,16 @@ float Camera::getFov() const {
 	return fov;
 }
 
+float Camera::getYaw() const
+{
+	return yaw;
+}
+
+float Camera::getPitch() const
+{
+	return pitch;
+}
+
 void Camera::setFov(const float fv) {
 	fov = fv;
 }
@@ -118,4 +128,12 @@ void Camera::setFront(const glm::vec3 target) {
 
 void Camera::setUp(const glm::vec3 up) {
 	camUp = up;
+}
+
+void Camera::setYaw(const float y) {
+	yaw = y;
+}
+
+void Camera::setPitch(const float p) {
+	pitch = p;
 }
