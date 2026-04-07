@@ -15,6 +15,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 unsigned int LoadTexture(const char* fPath);
+unsigned int LoadCubemap(std::vector<std::string>& faces);
 
 // Values / Settings
 const unsigned int SCR_WIDTH = 800;
@@ -219,10 +220,56 @@ int main() {
          0.3f,  1.0f,  1.0f, 1.0f
 	};
 
+	float skyboxVertices[] = {
+		// positions          
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f
+	};	
+
 	Shader phongShader("texture.vert", "phongShading.frag");
 	Shader depthTestShader("depthTest.vert", "depthTest.frag");
 	Shader stencilTestShader("depthTest.vert", "stencilTest.frag");
 	Shader fbShader("framebuffer.vert", "framebuffer.frag");
+	Shader skyboxShader("cubeMap.vert", "cubeMap.frag");
 
 	unsigned int metalTex = LoadTexture("textures/metal.png");
 	unsigned int marbleTex = LoadTexture("textures/marble.jpg");
@@ -280,12 +327,11 @@ int main() {
 	// Disallow OpenGL from updating the depth each frame after it computes depth test for every fragment. 
 	// This makes the depth buffer read-only.
 	// (its supposed to be able to update the depth buffer if a fragment passes the depth test)
-	// glDepthMask(GL_FALSE);
 	glEnable(GL_BLEND);
 	// 1st arg is src factor, 2nd is dest factor
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	glDepthFunc(GL_LEQUAL);
 
 	glEnable(GL_CULL_FACE); 
 	glFrontFace(GL_CW);
@@ -349,6 +395,28 @@ int main() {
 	glEnableVertexAttribArray(1);
 	glBindVertexArray(0);
 
+	std::vector<std::string> faces {
+	    "textures/skybox/right.jpg",
+	    "textures/skybox/left.jpg",
+	    "textures/skybox/top.jpg",
+	    "textures/skybox/bottom.jpg",
+	    "textures/skybox/front.jpg",
+	    "textures/skybox/back.jpg"
+	};
+
+	unsigned int skyboxVAO, skyboxVBO;
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
+
+	glDepthMask(GL_TRUE);
+	unsigned int cubemapTex = LoadCubemap(faces);
+
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
@@ -367,8 +435,7 @@ int main() {
 		 
 		// render forward facing scene to default framebuffer
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glEnable(GL_DEPTH_TEST);
-
+		// before rendering anything, first render the skybox
 		// Ensure your order or transform is SRT: Scale, rotate, then translate
 		// if you tried someth like translate bef scale, you'll scale the translation by the same amt
 		// Draw cube object
@@ -376,15 +443,12 @@ int main() {
 		glm::mat4 view = camActor.getViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
 
+		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE); 
-
+		// floor		
 		depthTestShader.use();
-		depthTestShader.setMat4("model", model);
 		depthTestShader.setMat4("view", view);
 		depthTestShader.setMat4("proj", proj);
-		depthTestShader.setInt("tex1", 0);
-
-		// floor		
 		model = glm::mat4(1.0f);
 		depthTestShader.setMat4("model", model);
 		glBindVertexArray(planeVAO);
@@ -410,7 +474,6 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		glDisable(GL_CULL_FACE); 
-		depthTestShader.use();
 		depthTestShader.setInt("tex1", 0);
 		glBindVertexArray(transparentVAO);
 
@@ -430,15 +493,30 @@ int main() {
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
 
+		// removes any translation, but keeps all rotation transformations (keeps upper 3x3 matrix)
+		glm::mat4 camView = glm::mat3(camActor.getViewMatrix());
+		model = glm::mat4(1.0f);
+		skyboxShader.use();
+		skyboxShader.setMat4("model", model);
+		skyboxShader.setMat4("view", camView);
+		skyboxShader.setMat4("proj", proj);
+		skyboxShader.setInt("cubeMap", 0);
+		// disable writing to cube's depth from camera into depth buffer
+		glBindVertexArray(skyboxVAO);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+
 		glBindVertexArray(0);
 
 		// Render the backwards scene onto the rear view mirror quad:
 		// first get the back facing view matrix
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glClear(GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
 
-		camActor.setFront(-camActor.getFront());
+		depthTestShader.use();
+		depthTestShader.setInt("tex1", 0);
+		// camActor.setFront(-camActor.getFront());
 		camActor.setYaw(camActor.getYaw() + 180.0f);
 		// don't constrain pitch (last arg false) b/c we want to also reverse pitch values (?)
 		camActor.ProcessMouseMovement(0.0f, 0.0f, false);
@@ -469,14 +547,12 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// cube 2
-		depthTestShader.use();
 		model = glm::mat4(1.0f);
 	    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
 		depthTestShader.setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		glDisable(GL_CULL_FACE); 
-		depthTestShader.setInt("tex1", 0);
 		glBindVertexArray(transparentVAO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, windowTex);
@@ -491,6 +567,19 @@ int main() {
 		}
 		sorted.clear();
 
+		// removes any translation, but keeps all rotation transformations (keeps upper 3x3 matrix)
+		camView = glm::mat3(reverseViewMat);
+		model = glm::mat4(1.0f);
+		skyboxShader.use();
+		skyboxShader.setMat4("model", model);
+		skyboxShader.setMat4("view", camView);
+		skyboxShader.setMat4("proj", proj);
+		skyboxShader.setInt("cubeMap", 0);
+		// disable writing to cube's depth from camera into depth buffer
+		glBindVertexArray(skyboxVAO);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
 		// We're done rendering the back view. Set the view matrix back to its original.
 		view = camActor.getViewMatrix();
 		depthTestShader.setMat4("view", view);
@@ -501,7 +590,7 @@ int main() {
 		fbShader.setInt("screenTex", 0);
 		glActiveTexture(GL_TEXTURE0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		// glDisable(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_TEST);
 		glBindVertexArray(rearVAO);
 		glBindTexture(GL_TEXTURE_2D, fbtex);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -599,5 +688,29 @@ unsigned int LoadTexture(const char* fPath) {
 	}
 
 	return textureID;
+}
+unsigned int LoadCubemap(std::vector<std::string>& faces) {
+	unsigned int texID;
+	glGenTextures(1, &texID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+
+	int w, h, nrChannels;
+	for (int i = 0; i < faces.size(); ++i) {
+		void* data = stbi_load(faces[i].c_str(), &w, &h, &nrChannels, 0);
+		if (data) {
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		} else {
+			std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+		}
+		stbi_image_free(data);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return texID;
 }
 
