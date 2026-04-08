@@ -16,10 +16,9 @@ float linearizeDepth(float depth) {
 }
 
 void main() {
-	// float depth = linearizeDepth(gl_FragCoord.z) / far;
-	// FragColor = vec4(vec3(depth), 1.0f);
-
 	// Since we added blending, no need to discard fragments that are nearly transparent
 	vec4 texColor = texture(tex1, texCoords);
+	if (texColor.a < 0.1) 
+		discard;
 	FragColor = texColor;
 }

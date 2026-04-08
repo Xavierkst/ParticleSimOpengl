@@ -30,15 +30,5 @@ void main() {
 		1.0 / 16, 2.0 / 16, 1.0 / 16  
 	);
 
-	// for (int i = 0; i < 9; ++i) { 
-	// 	sampleTex[i] = vec3(texture(screenTex, texCoords.st + offsets[i]));
-	// }
-
-	// multiply kernel values with sample values:
-	// vec3 col = vec3(0.0f);
-	// for (int i = 0; i < 9; ++i) { 
-	// 	col += sampleTex[i] * kernel2[i];
-	// }
-
-	FragColor = texture(screenTex, texCoords);
+	FragColor = texture(screenTex, vec2(1.0f - texCoords.x, texCoords.y));
 }
