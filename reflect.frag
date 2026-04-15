@@ -13,9 +13,9 @@ void main() {
 	// get the viewToFragPosRay and pass in the normal. This generates the reflected ray
 	float ior = 1.00 / 1.52;
 	vec3 incidentRay = normalize(FragPos - viewPos);
-	vec3 R1 = refract(incidentRay, normalize(Normal), ior);
-	vec3 norm2 = texture(normMap, R1).xyz;
-	vec3 R2 = refract(R1, -norm2, 1.0f/ior);
+	vec3 R1 = reflect(incidentRay, normalize(Normal));
+	// vec3 norm2 = texture(normMap, R1).xyz * 2.0f - 1.0f;
+	// vec3 R2 = normalize(refract(R1, -norm2, 1.0f/ior));
 
-	FragColor = vec4(texture(cubeMap, R2).rgb, 1.0f);
+	FragColor = vec4(texture(cubeMap, R1).rgb, 1.0f);
 }

@@ -1,6 +1,7 @@
 #include <map>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "Point.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <string>
@@ -182,31 +183,12 @@ int main() {
 		1.0f,  0.5f,  0.0f,  1.0f,  0.5f,  0.0f,  1.0f,  0.0f
 	};
 
-	float quadVertices[] = {
-		// positions   // texCoords
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		-1.0f, -1.0f,  0.0f, 0.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-		 1.0f,  1.0f,  1.0f, 1.0f
-	};
-
 	std::vector<glm::vec3> windows{
 		glm::vec3(-1.5f, 0.0f, -0.48f),
 		glm::vec3(1.5f, 0.0f, 0.51f),
 		glm::vec3(0.0f, 0.0f, 0.7f),
 		glm::vec3(-0.3f, 0.0f, -2.3f),
 		glm::vec3(0.5f, 0.0f, -0.6f)
-	};
-
-	std::vector<glm::vec3> vegetation{
-		glm::vec3(-1.5f,  0.0f, -0.48f),
-		glm::vec3(1.5f,  0.0f,  0.51f),
-		glm::vec3(0.0f,  0.0f,  0.7f),
-		glm::vec3(-0.3f,  0.0f, -2.3f),
-		glm::vec3(0.5f,  0.0f, -0.6f)
 	};
 
 	float rearViewVertices[] = {
@@ -265,9 +247,22 @@ int main() {
 		 1.0f, -1.0f,  1.0f
 	};	
 
+	struct Matrices {
+		glm::mat4 view;
+		glm::mat4 proj;
+	};
+
+	// Create ubo
+	unsigned int ubo;
+	glGenBuffers(1, &ubo);
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Matrices), NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	// bind a ubo to block index 2--the ubo doesn't need to be the currently binded buffer object
+	glBindBufferRange(GL_UNIFORM_BUFFER, 2, ubo, 0, sizeof(Matrices));
+
 	Shader phongShader("texture.vert", "phongShading.frag");
 	Shader depthTestShader("depthTest.vert", "depthTest.frag");
-	Shader stencilTestShader("depthTest.vert", "stencilTest.frag");
 	Shader fbShader("framebuffer.vert", "framebuffer.frag");
 	Shader skyboxShader("cubeMap.vert", "cubeMap.frag");
 	Shader cubeReflShader("reflect.vert", "reflect.frag");
@@ -275,7 +270,6 @@ int main() {
 	unsigned int metalTex = LoadTexture("textures/metal.png");
 	unsigned int marbleTex = LoadTexture("textures/marble.jpg");
 	unsigned int windowTex = LoadTexture("textures/blending_transparent_window.png");
-	unsigned int grassTex = LoadTexture("textures/grass.png");
 
 	unsigned int transparentVAO, transparentVBO;
 	glGenBuffers(1, &transparentVBO);
@@ -329,6 +323,7 @@ int main() {
 	glm::vec3 lightColor(1.0f);
 	
 	// Model backpackModel("./BackpackModel/backpack.obj");
+
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
 
@@ -345,7 +340,6 @@ int main() {
 	glFrontFace(GL_CW);
 	glCullFace(GL_BACK);
 
-	// glEnable(GL_STENCIL_TEST);
 	std::map<float, glm::vec3> sorted;
 
 	unsigned int fbo;
@@ -358,6 +352,7 @@ int main() {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 	// attach texture to currently bound framebuffer object
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbtex, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -378,19 +373,7 @@ int main() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Do offscreen rendering to the texture
-	// create a VAO with the vertex data binded to it
-	unsigned int texVAO, texVBO;
-	glGenVertexArrays(1, &texVAO);
-	glGenBuffers(1, &texVBO);
-	glBindVertexArray(texVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, texVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2*sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glBindVertexArray(0);
-	
+	// create a VAO with the vertex data binded to it	
 	unsigned int rearVAO, rearVBO;
 	glGenBuffers(1, &rearVBO);
 	glGenVertexArrays(1, &rearVAO);
@@ -411,15 +394,18 @@ int main() {
 	    "textures/skybox/front.jpg",
 	    "textures/skybox/back.jpg"
 	};
-	std::vector<std::string> nFaces {
-	    "textures/skybox/normalMap.png",
-	    "textures/skybox/normalMap.png",
-	    "textures/skybox/normalMap.png",
-	    "textures/skybox/normalMap.png",
-	    "textures/skybox/normalMap.png",
-	    "textures/skybox/normalMap.png"
-	};
 
+	// get the uniform block location in each shader and bind it to an index
+	unsigned int pmatIdx = glGetUniformBlockIndex(phongShader.ID, "Matrices");
+	unsigned int smatIdx = glGetUniformBlockIndex(skyboxShader.ID, "Matrices");
+	unsigned int dmatIdx = glGetUniformBlockIndex(depthTestShader.ID, "Matrices");
+	unsigned int cmatIdx = glGetUniformBlockIndex(cubeReflShader.ID, "Matrices");
+
+	// bind the unif block location to some block index for each shader prog:
+	glUniformBlockBinding(phongShader.ID, pmatIdx, 2);
+	glUniformBlockBinding(skyboxShader.ID, smatIdx, 2);
+	glUniformBlockBinding(depthTestShader.ID, dmatIdx, 2);
+	glUniformBlockBinding(cubeReflShader.ID, cmatIdx, 2);
 
 	unsigned int skyboxVAO, skyboxVBO;
 	glGenVertexArrays(1, &skyboxVAO);
@@ -433,7 +419,16 @@ int main() {
 
 	glDepthMask(GL_TRUE);
 	unsigned int cubemapTex = LoadCubemap(faces);
-	unsigned int normmapTex = LoadCubemap(nFaces);
+
+	glEnable(GL_PROGRAM_POINT_SIZE);
+
+	// bind the ubo to the same index
+	Matrices mat1;
+	mat1.proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
+	// Pass in the matrix data to the buffer:
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(mat1.proj));
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -455,16 +450,33 @@ int main() {
 		// Ensure your order or transform is SRT: Scale, rotate, then translate
 		// if you tried someth like translate bef scale, you'll scale the translation by the same amt
 		// Draw cube object
-		glm::mat4 proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
 		glm::mat4 view = camActor.getViewMatrix();
+		mat1.view = glm::mat4(glm::mat3(view));
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 		glm::mat4 model = glm::mat4(1.0f);
+
+		// Render the skybox first (there's excessive drawing of skybox fragments that'll eventually be overdrawn)
+		model = glm::mat4(1.0f);
+		skyboxShader.use();
+		skyboxShader.setMat4("model", model);
+		skyboxShader.setInt("cubeMap", 0);
+		glBindVertexArray(skyboxVAO);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		mat1.view = view;
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE); 
+
 		// floor		
 		depthTestShader.use();
-		depthTestShader.setMat4("view", view);
-		depthTestShader.setMat4("proj", proj);
 		model = glm::mat4(1.0f);
 		depthTestShader.setMat4("model", model);
 		glBindVertexArray(planeVAO);
@@ -485,14 +497,11 @@ int main() {
 		model = glm::mat4(1.0f);
 	    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
 		depthTestShader.setMat4("model", model);
-		depthTestShader.setMat4("view", view);
-		depthTestShader.setMat4("proj", proj);
-		// glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		glDisable(GL_CULL_FACE); 
 		depthTestShader.setInt("tex1", 0);
 		glBindVertexArray(transparentVAO);
-
 		glBindTexture(GL_TEXTURE_2D, windowTex);
 		// sort the windows by increasing dist to the camera
 		for (auto& windowPos : windows) {
@@ -500,7 +509,7 @@ int main() {
 			sorted[dist] = windowPos;
 		}
 
-		// sorted distances are from closest to farthest--render farthest transparent windows first
+		// distances are from closest to farthest--render farthest transparent windows first
 		for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
 			glm::mat4 transpModel(1.0f);
 			transpModel = glm::translate(transpModel, it->second);
@@ -512,29 +521,14 @@ int main() {
 		// Render reflective cube
 		cubeReflShader.use();
 		glBindVertexArray(cubeVAO);
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
+		cubeReflShader.setInt("cubeMap", 0);
+		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(-3.0f, 0.0f, -3.0f));
 		cubeReflShader.setMat4("model", model);
-		cubeReflShader.setMat4("view", view);
-		cubeReflShader.setMat4("proj", proj);
 		cubeReflShader.setVec3("viewPos", camActor.getPos());
-		cubeReflShader.setInt("cubeMap", 0);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-		// removes any translation, but keeps all rotation transformations (keeps upper 3x3 matrix)
-		glm::mat4 camView = glm::mat3(camActor.getViewMatrix());
-		model = glm::mat4(1.0f);
-		skyboxShader.use();
-		skyboxShader.setMat4("model", model);
-		skyboxShader.setMat4("view", camView);
-		skyboxShader.setMat4("proj", proj);
-		skyboxShader.setInt("cubeMap", 0);
-		skyboxShader.setInt("normMap", 1);
-		glBindVertexArray(skyboxVAO);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
 
 		glBindVertexArray(0);
 
@@ -545,15 +539,32 @@ int main() {
 
 		depthTestShader.use();
 		depthTestShader.setInt("tex1", 0);
-		// camActor.setFront(-camActor.getFront());
 		camActor.setYaw(camActor.getYaw() + 180.0f);
 		camActor.setPitch(-camActor.getPitch());
 		// don't constrain pitch (last arg false) b/c we want to also reverse pitch values (?)
 		camActor.ProcessMouseMovement(0.0f, 0.0f, false);
 		// Get the view matrix of the camera as it looks behind where its currently looking
 		glm::mat4 reverseViewMat(camActor.getViewMatrix());
-		depthTestShader.setMat4("view", reverseViewMat);
-		depthTestShader.setMat4("proj", proj);
+
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		mat1.view = glm::mat4(glm::mat3(reverseViewMat));
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+		// sky box
+		model = glm::mat4(1.0f);
+		skyboxShader.use();
+		skyboxShader.setMat4("model", model);
+		glBindVertexArray(skyboxVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		mat1.view = reverseViewMat;
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 		// set it back to normal
 		camActor.setYaw(camActor.getYaw() - 180.0f);
 		camActor.setPitch(-camActor.getPitch());
@@ -561,6 +572,7 @@ int main() {
 
 		// floor		
 		model = glm::mat4(1.0f);
+		depthTestShader.use();
 		depthTestShader.setMat4("model", model);
 		glBindVertexArray(planeVAO);
 		glActiveTexture(GL_TEXTURE0);
@@ -569,6 +581,7 @@ int main() {
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, marbleTex);
+
 		// cube 1
 		glEnable(GL_CULL_FACE); 
 		model = glm::mat4(1.0f);
@@ -583,12 +596,13 @@ int main() {
 		depthTestShader.setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
+		// windows (Reversed)
 		glDisable(GL_CULL_FACE); 
 		glBindVertexArray(transparentVAO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, windowTex);
 
-		// sorted distances are from closest to farthest--render farthest transparent windows first
+		// distances are from closest to farthest--render farthest transparent windows first
 		for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
 			glm::mat4 transpModel(1.0f);
 			transpModel = glm::translate(transpModel, it->second);
@@ -598,24 +612,22 @@ int main() {
 		}
 		sorted.clear();
 
-		// removes any translation, but keeps all rotation transformations (keeps upper 3x3 matrix)
-		camView = glm::mat3(reverseViewMat);
+		cubeReflShader.use();
 		model = glm::mat4(1.0f);
-		skyboxShader.use();
-		skyboxShader.setMat4("model", model);
-		skyboxShader.setMat4("view", camView);
-		skyboxShader.setMat4("proj", proj);
-		glBindVertexArray(skyboxVAO);
+		model = glm::translate(model, glm::vec3(-3.0f, 0.0f, -3.0f));
+		cubeReflShader.setMat4("model", model);
+		cubeReflShader.setVec3("viewPos", camActor.getPos());
+		glBindVertexArray(cubeVAO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, normmapTex);
+		cubeReflShader.setInt("cubeMap", 0);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// We're done rendering the back view. Set the view matrix back to its original.
-		view = camActor.getViewMatrix();
-		depthTestShader.setMat4("view", view);
-		depthTestShader.setMat4("proj", proj);
+		mat1.view = camActor.getViewMatrix();
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 		// Render the smaller quad onto the default framebuffer
 		fbShader.use();
@@ -623,6 +635,7 @@ int main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDisable(GL_DEPTH_TEST);
 		glBindVertexArray(rearVAO);
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fbtex);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -638,10 +651,12 @@ int main() {
     // ------------------------------------------------------------------------
 	glDeleteVertexArrays(1, &cubeVAO);
 	glDeleteVertexArrays(1, &planeVAO);
+	glDeleteVertexArrays(1, &transparentVAO);
+	glDeleteVertexArrays(1, &rearVAO);
+	glDeleteVertexArrays(1, &skyboxVAO);
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
-	glfwTerminate();
 
 	return 0;
 }

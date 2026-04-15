@@ -2,8 +2,10 @@
 
 out vec4 FragColor;
 
-in vec4 FragPos;
-in vec2 texCoords;
+in VS_OUT {
+	in vec4 FragPos;
+	in vec2 texCoords;
+} fs_in;
 
 uniform sampler2D tex1;
 
@@ -17,7 +19,7 @@ float linearizeDepth(float depth) {
 
 void main() {
 	// Since we added blending, no need to discard fragments that are nearly transparent
-	vec4 texColor = texture(tex1, texCoords);
+	vec4 texColor = texture(tex1, fs_in.texCoords);
 	if (texColor.a < 0.1) 
 		discard;
 	FragColor = texColor;

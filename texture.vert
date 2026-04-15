@@ -9,8 +9,11 @@ out vec4 Normal;
 out vec2 textureCoords;
 
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 proj;
+
+layout (std140) uniform Matrices {
+	mat4 view;
+	mat4 proj;
+};
 
 void main()
 {
