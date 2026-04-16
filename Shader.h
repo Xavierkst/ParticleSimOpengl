@@ -12,7 +12,7 @@
 class Shader {
 public:
 	unsigned int ID;
-	Shader(const char* vShaderPath, const char* fShaderPath);
+    Shader(const char* vShaderPath, const char* fShaderPath, const char* gShaderPath = nullptr);
 
     void use() const;
 

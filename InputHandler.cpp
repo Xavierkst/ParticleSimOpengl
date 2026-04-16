@@ -49,7 +49,7 @@ void InputHandler::processInput(GLFWwindow* window, std::vector<Command*>& cmds,
 		}
 	}
 	// Apply gravity on the player always
-	cmds.push_back(noButton);
+	// cmds.push_back(noButton);
 }
 
 InputHandler::~InputHandler() {

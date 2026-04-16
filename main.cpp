@@ -150,13 +150,34 @@ int main() {
 		 1.0f, -1.0f, -1.0f,
 		-1.0f, -1.0f,  1.0f,
 		 1.0f, -1.0f,  1.0f
-	};	
+	};
+
+	float points[] = {
+		-0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // top-left
+		 0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // top-right
+		 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // bottom-right
+		-0.5f, -0.5f, 1.0f, 1.0f, 0.0f  // bottom-left
+	};  
 
 	struct Matrices {
 		glm::mat4 view;
 		glm::mat4 proj;
 	};
-
+	
+	Shader geomShader("geomShader.vert", "geomShader.frag", "geomShader.geom");
+	unsigned int pointsVAO, pointsVBO;
+	glGenVertexArrays(1, &pointsVAO);
+	glGenBuffers(1, &pointsVBO);
+	glBindVertexArray(pointsVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (2*sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glBindVertexArray(0);
+	
+	
 	Shader phongShader("texture.vert", "phongShading.frag");
 	Shader depthTestShader("depthTest.vert", "depthTest.frag");
 	Shader blueShader("uboShader.vert", "blueShader.frag");
@@ -257,36 +278,42 @@ int main() {
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 			
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		mat1.view = camActor.getViewMatrix();
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		// glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		geomShader.use();
+		glBindVertexArray(pointsVAO);
+		glDrawArrays(GL_POINTS, 0, 4);
 
-		glBindVertexArray(cubeVAO);
+		// QUESTION: Why doesn't the screen show if the view matrix is not updated every frame?..
 
-		redShader.use();
-		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(-0.75f, 0.75f, 0.0f)); // move top-left
-		redShader.setMat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		// mat1.view = camActor.getViewMatrix();
+		// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
+		// glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-		greenShader.use();
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.75f, 0.75f, 0.0f)); // move top-right
-		greenShader.setMat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		// glBindVertexArray(cubeVAO);
 
-		yellowShader.use(); 
-		model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-0.75f, -0.75f, 0.0f)); // move bottom-left
-		yellowShader.setMat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		// redShader.use();
+		// glm::mat4 model(1.0f);
+		// model = glm::translate(model, glm::vec3(-0.75f, 0.75f, 0.0f)); // move top-left
+		// redShader.setMat4("model", model);
+		// glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		blueShader.use(); 
-		model = glm::mat4(1.0f);
-        model = model = glm::translate(model, glm::vec3(0.75f, -0.75f, 0.0f)); // move bottom-right
-		blueShader.setMat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		// greenShader.use();
+		// model = glm::mat4(1.0f);
+		// model = glm::translate(model, glm::vec3(0.75f, 0.75f, 0.0f)); // move top-right
+		// greenShader.setMat4("model", model);
+		// glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// yellowShader.use(); 
+		// model = glm::mat4(1.0f);
+        // model = glm::translate(model, glm::vec3(-0.75f, -0.75f, 0.0f)); // move bottom-left
+		// yellowShader.setMat4("model", model);
+		// glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// blueShader.use(); 
+		// model = glm::mat4(1.0f);
+        // model = model = glm::translate(model, glm::vec3(0.75f, -0.75f, 0.0f)); // move bottom-right
+		// blueShader.setMat4("model", model);
+		// glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -298,6 +325,7 @@ int main() {
     // ------------------------------------------------------------------------
 	glDeleteVertexArrays(1, &cubeVAO);
 	glDeleteVertexArrays(1, &skyboxVAO);
+	glDeleteVertexArrays(1, &pointsVAO);
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
