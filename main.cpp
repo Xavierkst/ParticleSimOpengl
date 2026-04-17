@@ -178,7 +178,10 @@ int main() {
 	glBindVertexArray(0);
 	
 	Shader phongShader("texture.vert", "phongShading.frag");
-	Shader depthTestShader("depthTest.vert", "depthTest.frag", "explodingGeom.geom");
+	// Shader depthTestShader("depthTest.vert", "depthTest.frag", "explodingGeom.geom");
+	Shader depthTestShader("depthTest.vert", "depthTest.frag");
+	Shader normalDisplayShader("normalDisplay.vert", "normalDisplay.frag", "normalDisplay.geom");
+
 	Shader blueShader("uboShader.vert", "blueShader.frag");
 	Shader greenShader("uboShader.vert", "greenShader.frag");
 	Shader redShader("uboShader.vert", "redShader.frag");
@@ -200,8 +203,10 @@ int main() {
 
 	// obtain the "Matrices" uniform block location for depthTestShader
 	unsigned int explodeMatrixIdx = glGetUniformBlockIndex(depthTestShader.ID, "Matrices");
+	unsigned int normalDispMatrixIdx = glGetUniformBlockIndex(normalDisplayShader.ID, "Matrices");
 	// bind this unif blk idx on the GPU / Shader side to binding number 2 (Prior, we already binded the UBO to binding no. 2 as well)
 	glUniformBlockBinding(depthTestShader.ID, explodeMatrixIdx, 2);
+	glUniformBlockBinding(normalDisplayShader.ID, normalDispMatrixIdx, 2);
 
 	// bind the unif block location to some block index for each shader prog:
 	glUniformBlockBinding(blueShader.ID, bMatIdx, 2);
@@ -296,8 +301,11 @@ int main() {
 		glm::mat4 model = glm::mat4(1.0f);
 		// model = glm::scale(model, glm::vec3(0.2, 0.2, 0.2));
 		depthTestShader.setMat4("model", model);
-		depthTestShader.setFloat("time", currentFrame);
+		// depthTestShader.setFloat("time", currentFrame);
 		backpackModel.Draw(depthTestShader);
+		normalDisplayShader.use();
+		normalDisplayShader.setMat4("model", model);
+		backpackModel.Draw(normalDisplayShader);
 
 		// QUESTION: Why doesn't the screen show if the view matrix is not updated every frame?..
 

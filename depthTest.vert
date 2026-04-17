@@ -5,7 +5,7 @@ layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
 
 out VS_OUT {
-	out vec2 texCoords;
+	vec2 texCoords;
 } vs_out;
 
 // 'Matrices' uniform block
@@ -16,6 +16,6 @@ layout (std140) uniform Matrices {
  };
 
 void main() {
-	gl_Position = view*model*vec4(aPos, 1.0f);
+	gl_Position = proj*view*model*vec4(aPos, 1.0f);
 	vs_out.texCoords = aTexCoords;
 }
