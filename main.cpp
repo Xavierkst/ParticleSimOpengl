@@ -177,9 +177,8 @@ int main() {
 	glEnableVertexAttribArray(1);
 	glBindVertexArray(0);
 	
-	
 	Shader phongShader("texture.vert", "phongShading.frag");
-	Shader depthTestShader("depthTest.vert", "depthTest.frag");
+	Shader depthTestShader("depthTest.vert", "depthTest.frag", "explodingGeom.geom");
 	Shader blueShader("uboShader.vert", "blueShader.frag");
 	Shader greenShader("uboShader.vert", "greenShader.frag");
 	Shader redShader("uboShader.vert", "redShader.frag");
@@ -194,10 +193,15 @@ int main() {
 	glBindBufferRange(GL_UNIFORM_BUFFER, 2, ubo, 0, sizeof(Matrices));
 
 	// get the uniform block location in each shader and bind it to an index
-	unsigned int bMatIdx = glGetUniformBlockIndex(blueShader .ID, "Matrices");
+	unsigned int bMatIdx = glGetUniformBlockIndex(blueShader.ID, "Matrices");
 	unsigned int gMatIdx = glGetUniformBlockIndex(greenShader.ID, "Matrices");
 	unsigned int rMatIdx = glGetUniformBlockIndex(redShader.ID, "Matrices");
 	unsigned int yMatIdx = glGetUniformBlockIndex(yellowShader.ID, "Matrices");
+
+	// obtain the "Matrices" uniform block location for depthTestShader
+	unsigned int explodeMatrixIdx = glGetUniformBlockIndex(depthTestShader.ID, "Matrices");
+	// bind this unif blk idx on the GPU / Shader side to binding number 2 (Prior, we already binded the UBO to binding no. 2 as well)
+	glUniformBlockBinding(depthTestShader.ID, explodeMatrixIdx, 2);
 
 	// bind the unif block location to some block index for each shader prog:
 	glUniformBlockBinding(blueShader.ID, bMatIdx, 2);
@@ -224,7 +228,7 @@ int main() {
 	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
 
-	// Model backpackModel("./BackpackModel/backpack.obj");
+	Model backpackModel("./BackpackModel/backpack.obj");
 
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
@@ -262,6 +266,8 @@ int main() {
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(mat1.proj));
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+    glEnable(GL_DEPTH_TEST);
+
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
@@ -278,10 +284,20 @@ int main() {
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 			
-		// glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		geomShader.use();
-		glBindVertexArray(pointsVAO);
-		glDrawArrays(GL_POINTS, 0, 4);
+		// geomShader.use();
+		// glBindVertexArray(pointsVAO);
+		// glDrawArrays(GL_POINTS, 0, 4);
+
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(camActor.getViewMatrix()));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+		depthTestShader.use();
+		glm::mat4 model = glm::mat4(1.0f);
+		// model = glm::scale(model, glm::vec3(0.2, 0.2, 0.2));
+		depthTestShader.setMat4("model", model);
+		depthTestShader.setFloat("time", currentFrame);
+		backpackModel.Draw(depthTestShader);
 
 		// QUESTION: Why doesn't the screen show if the view matrix is not updated every frame?..
 

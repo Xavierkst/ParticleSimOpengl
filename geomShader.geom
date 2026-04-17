@@ -8,6 +8,9 @@
 //     float gl_ClipDistance[];
 // } gl_in[]
 
+layout (points) in;
+layout (triangle_strip, max_vertices = 10) out;
+
 in VS_OUT {
 	vec3 color;
 } gs_in[];
@@ -15,10 +18,6 @@ in VS_OUT {
 out GS_OUT {
 	vec3 gColor;
 }gs_out;
-
-// incoming from vert shader:
-layout (points) in;
-layout (triangle_strip, max_vertices = 5) out;
 
 void build_house(vec4 position) {
 	// only 1 input vertex (elem 0) since we're drawing point by point
