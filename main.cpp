@@ -152,6 +152,17 @@ int main() {
 		 1.0f, -1.0f,  1.0f
 	};
 
+	float quadVertices[] = {
+		// positions     // colors
+		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+		-0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
+
+		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,   
+		 0.05f,  0.05f,  0.0f, 1.0f, 1.0f		    		
+	};  
+
 	float points[] = {
 		-0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // top-left
 		 0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // top-right
@@ -163,7 +174,38 @@ int main() {
 		glm::mat4 view;
 		glm::mat4 proj;
 	};
-	
+
+	glm::vec2 translations[100];
+	int index = 0;
+	float offset = 0.1f;
+	for (int i = -10; i < 10; i+=2) {
+		for (int j = -10; j < 10; j+=2) {
+			glm::vec2 coords((float)i / 10.0f + offset, (float)j/10.0f + offset);
+			translations[index++] = coords;
+		}
+	}
+
+	unsigned int instanceVAO, instanceVBO, iVBO;;
+	glGenVertexArrays(1, &instanceVAO);
+	glGenBuffers(1, &instanceVBO);
+	glGenBuffers(1, &iVBO);
+	glBindVertexArray(instanceVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (2*sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, iVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(translations), &translations[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2*sizeof(float), (void*)0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glVertexAttribDivisor(2, 1);
+	glBindVertexArray(0);
+
+
 	Shader geomShader("geomShader.vert", "geomShader.frag", "geomShader.geom");
 	unsigned int pointsVAO, pointsVBO;
 	glGenVertexArrays(1, &pointsVAO);
@@ -181,6 +223,7 @@ int main() {
 	// Shader depthTestShader("depthTest.vert", "depthTest.frag", "explodingGeom.geom");
 	Shader depthTestShader("depthTest.vert", "depthTest.frag");
 	Shader normalDisplayShader("normalDisplay.vert", "normalDisplay.frag", "normalDisplay.geom");
+	Shader instancingShader("framebuffer.vert", "framebuffer.frag");
 
 	Shader blueShader("uboShader.vert", "blueShader.frag");
 	Shader greenShader("uboShader.vert", "greenShader.frag");
@@ -297,15 +340,19 @@ int main() {
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(camActor.getViewMatrix()));
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-		depthTestShader.use();
-		glm::mat4 model = glm::mat4(1.0f);
-		// model = glm::scale(model, glm::vec3(0.2, 0.2, 0.2));
-		depthTestShader.setMat4("model", model);
+		// depthTestShader.use();
+		// glm::mat4 model = glm::mat4(1.0f);
+		// // model = glm::scale(model, glm::vec3(0.2, 0.2, 0.2));
+		// depthTestShader.setMat4("model", model);
 		// depthTestShader.setFloat("time", currentFrame);
-		backpackModel.Draw(depthTestShader);
-		normalDisplayShader.use();
-		normalDisplayShader.setMat4("model", model);
-		backpackModel.Draw(normalDisplayShader);
+		// backpackModel.Draw(depthTestShader);
+		// normalDisplayShader.use();
+		// normalDisplayShader.setMat4("model", model);
+		// backpackModel.Draw(normalDisplayShader);
+
+		instancingShader.use();
+		glBindVertexArray(instanceVAO);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
 
 		// QUESTION: Why doesn't the screen show if the view matrix is not updated every frame?..
 
