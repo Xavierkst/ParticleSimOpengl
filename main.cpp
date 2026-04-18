@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "Point.h"
+#include <memory>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <string>
@@ -244,6 +245,9 @@ int main() {
 	unsigned int rMatIdx = glGetUniformBlockIndex(redShader.ID, "Matrices");
 	unsigned int yMatIdx = glGetUniformBlockIndex(yellowShader.ID, "Matrices");
 
+	unsigned int instMatIdx = glGetUniformBlockIndex(instancingShader.ID, "Matrices");
+	glUniformBlockBinding(instancingShader.ID, instMatIdx, 2);
+
 	// obtain the "Matrices" uniform block location for depthTestShader
 	unsigned int explodeMatrixIdx = glGetUniformBlockIndex(depthTestShader.ID, "Matrices");
 	unsigned int normalDispMatrixIdx = glGetUniformBlockIndex(normalDisplayShader.ID, "Matrices");
@@ -276,7 +280,9 @@ int main() {
 	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
 
-	Model backpackModel("./BackpackModel/backpack.obj");
+	// Model backpackModel("./BackpackModel/backpack.obj");
+	Model asteroidModel("./textures/planets/asteroid/rock.obj");
+	Model planetModel("./textures/planets/planet.obj");
 
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
@@ -306,7 +312,7 @@ int main() {
 	Matrices mat1;
 
 	mat1.view = glm::mat4(glm::mat3(camActor.getViewMatrix()));
-	mat1.proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
+	mat1.proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 1000.0f);
 
 	// Pass in the matrix data to the buffer:
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
@@ -315,6 +321,35 @@ int main() {
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     glEnable(GL_DEPTH_TEST);
+
+	// Calculate the displament for 1000 asteroid model matrices
+	int count = 1000;
+	std::unique_ptr<glm::mat4[]> modelMats;
+	modelMats = std::make_unique<glm::mat4[]>(1000);
+	srand(glfwGetTime());
+	float radius = 50.0f;
+	offset = 2.5f;
+	for (int i = 0; i < count; ++i) {
+		glm::mat4 model(1.0);
+		float angle = ((float)i / (float)count) * 360.0f;
+		// generate any random value between 0.0 and 2.5:
+		float displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
+		float x = sin(angle) * radius + displacement;
+		displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
+		// limit y displacement so that asteroids scattering still looks like a 'belt'
+		float y = displacement * 0.4f; 
+		displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
+		float z = cos(angle) * radius + displacement;
+		model = glm::translate(model, glm::vec3(x, y, z));
+
+		// influence the scale 
+		// 0.05 and 0.25
+		model = glm::scale(model, glm::vec3((rand() % 20)/100.0 + (0.05)));
+
+		// influence rotation
+		model = glm::rotate(model, float(rand() % 360), glm::vec3(0.25, 0.6, 0.9));
+		modelMats[i] = model;
+	}
 
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -335,56 +370,25 @@ int main() {
 		// geomShader.use();
 		// glBindVertexArray(pointsVAO);
 		// glDrawArrays(GL_POINTS, 0, 4);
+		
 
 		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(camActor.getViewMatrix()));
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-		// depthTestShader.use();
-		// glm::mat4 model = glm::mat4(1.0f);
-		// // model = glm::scale(model, glm::vec3(0.2, 0.2, 0.2));
-		// depthTestShader.setMat4("model", model);
-		// depthTestShader.setFloat("time", currentFrame);
-		// backpackModel.Draw(depthTestShader);
-		// normalDisplayShader.use();
-		// normalDisplayShader.setMat4("model", model);
-		// backpackModel.Draw(normalDisplayShader);
-
+		
 		instancingShader.use();
-		glBindVertexArray(instanceVAO);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+		glm::mat4 model(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
+		instancingShader.setMat4("model", model);
+		planetModel.Draw(instancingShader);
+		for (int i = 0; i < count; ++i) {
+			instancingShader.setMat4("model", modelMats[i]);
+			asteroidModel.Draw(instancingShader);
+		}
+		// glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
 
 		// QUESTION: Why doesn't the screen show if the view matrix is not updated every frame?..
-
-		// mat1.view = camActor.getViewMatrix();
-		// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
-		// glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-		// glBindVertexArray(cubeVAO);
-
-		// redShader.use();
-		// glm::mat4 model(1.0f);
-		// model = glm::translate(model, glm::vec3(-0.75f, 0.75f, 0.0f)); // move top-left
-		// redShader.setMat4("model", model);
-		// glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		// greenShader.use();
-		// model = glm::mat4(1.0f);
-		// model = glm::translate(model, glm::vec3(0.75f, 0.75f, 0.0f)); // move top-right
-		// greenShader.setMat4("model", model);
-		// glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		// yellowShader.use(); 
-		// model = glm::mat4(1.0f);
-        // model = glm::translate(model, glm::vec3(-0.75f, -0.75f, 0.0f)); // move bottom-left
-		// yellowShader.setMat4("model", model);
-		// glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		// blueShader.use(); 
-		// model = glm::mat4(1.0f);
-        // model = model = glm::translate(model, glm::vec3(0.75f, -0.75f, 0.0f)); // move bottom-right
-		// blueShader.setMat4("model", model);
-		// glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

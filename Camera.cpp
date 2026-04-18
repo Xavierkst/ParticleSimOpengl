@@ -21,16 +21,16 @@ void Camera::ProcessKeyboard(const CameraMovement dir, const float deltaTime) {
 	velo = SPEED * deltaTime;
 	switch (dir) {
 	case FORWARD:
-		setPos(getPos() + (velo * glm::vec3(getFront().x, .0f, getFront().z)));
+		setPos(getPos() + (velo * glm::vec3(getFront())));
 		break;
 	case BACKWARD:
-		setPos(getPos() - (velo * glm::vec3(getFront().x, .0f, getFront().z)));
+		setPos(getPos() - (velo * glm::vec3(getFront())));
 		break;
 	case LEFT:
-		setPos(getPos() - (velo * glm::vec3(camRight.x, .0f, camRight.z)));
+		setPos(getPos() - (velo * glm::vec3(camRight)));
 		break;
 	case RIGHT:
-		setPos(getPos() + (velo * glm::vec3(camRight.x, .0f, camRight.z)));
+		setPos(getPos() + (velo * glm::vec3(camRight)));
 		break;
 	case UP: {
 		veloY = SPEED;
