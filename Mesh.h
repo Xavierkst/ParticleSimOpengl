@@ -31,7 +31,7 @@ public:
 	void Draw(Shader& shader);
 
 private:
-	unsigned int VBO, EBO;
+	unsigned int VBO, EBO, IBO;
 
 	void setupMesh();
 };

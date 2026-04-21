@@ -12,12 +12,12 @@
 class Model {
 public:
 	Model(const char* path);
-
 	void Draw(Shader& shader);
-private:
-	std::unordered_map<std::string, Texture> textures_loaded;
 	std::vector<Mesh> meshes;
+	std::vector<Texture> textures_loaded;
 	std::string directory;
+
+private:
 
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
@@ -26,7 +26,6 @@ private:
 	std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);
 	unsigned int TextureFromFile(const char* fName, const char* fPath = ".");
 };
-
 
 #endif // MODEL_H_
 

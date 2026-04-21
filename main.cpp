@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include "Point.h"
 #include <memory>
+#include <algorithm>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <string>
@@ -37,6 +38,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_SAMPLES, 4);
 
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -63,173 +65,135 @@ int main() {
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	float cubeVertices[] = {
-		// Back face		  // normals          // tex coords
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
-		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right    
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right              
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left                
-		// Front face        
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,  0.0f, 0.0f, // bottom-left
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,  1.0f, 1.0f, // top-right
-		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,  1.0f, 0.0f, // bottom-right        
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,  1.0f, 1.0f, // top-right
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,  0.0f, 0.0f, // bottom-left
-		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,  0.0f, 1.0f, // top-left        
-		// Left face         
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left       
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		// Right face        
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right      
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right          
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 // Bottom face         
-		 -0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		  0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		  0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left        
-		  0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		 -0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		 -0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		 // Top face         
-		 -0.5f,  0.5f, -0.5f, 0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-		  0.5f,  0.5f, -0.5f, 0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right
-		  0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right                 
-		  0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		 -0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f, 0.0f, 0.0f, // bottom-left  
-		 -0.5f,  0.5f, -0.5f, 0.0f,  1.0f,  0.0f, 0.0f, 1.0f  // top-left              
-	};
+	float quadVertices[] = {   // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+        // positions   // texCoords
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
 
-	float skyboxVertices[] = {
-		// positions          
-		-1.0f,  1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    };
 
-		-1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
+	 float cubeVertices[] = {
+        // positions       
+        -0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f,  0.5f, -0.5f,
+         0.5f,  0.5f, -0.5f,
+        -0.5f,  0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,
 
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
+        -0.5f, -0.5f,  0.5f,
+         0.5f, -0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,
+        -0.5f, -0.5f,  0.5f,
 
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
+        -0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,
 
-		-1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
+         0.5f,  0.5f,  0.5f,
+         0.5f,  0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
 
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f
-	};
+        -0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f,  0.5f,
+         0.5f, -0.5f,  0.5f,
+        -0.5f, -0.5f,  0.5f,
+        -0.5f, -0.5f, -0.5f,
 
-	float quadVertices[] = {
-		// positions     // colors
-		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-		-0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
-
-		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,   
-		 0.05f,  0.05f,  0.0f, 1.0f, 1.0f		    		
-	};  
-
-	float points[] = {
-		-0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // top-left
-		 0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // top-right
-		 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // bottom-right
-		-0.5f, -0.5f, 1.0f, 1.0f, 0.0f  // bottom-left
-	};  
+        -0.5f,  0.5f, -0.5f,
+         0.5f,  0.5f, -0.5f,
+         0.5f,  0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f, -0.5f
+    };
 
 	struct Matrices {
 		glm::mat4 view;
 		glm::mat4 proj;
 	};
 
-	glm::vec2 translations[100];
-	int index = 0;
-	float offset = 0.1f;
-	for (int i = -10; i < 10; i+=2) {
-		for (int j = -10; j < 10; j+=2) {
-			glm::vec2 coords((float)i / 10.0f + offset, (float)j/10.0f + offset);
-			translations[index++] = coords;
-		}
-	}
+	glEnable(GL_MULTISAMPLE);
 
-	unsigned int instanceVAO, instanceVBO, iVBO;;
-	glGenVertexArrays(1, &instanceVAO);
-	glGenBuffers(1, &instanceVBO);
-	glGenBuffers(1, &iVBO);
-	glBindVertexArray(instanceVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (2*sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	glBindBuffer(GL_ARRAY_BUFFER, iVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(translations), &translations[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2*sizeof(float), (void*)0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glVertexAttribDivisor(2, 1);
-	glBindVertexArray(0);
-
-
-	Shader geomShader("geomShader.vert", "geomShader.frag", "geomShader.geom");
-	unsigned int pointsVAO, pointsVBO;
-	glGenVertexArrays(1, &pointsVAO);
-	glGenBuffers(1, &pointsVBO);
-	glBindVertexArray(pointsVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (2*sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glBindVertexArray(0);
-	
-	Shader phongShader("texture.vert", "phongShading.frag");
+	// Shader geomShader("geomShader.vert", "geomShader.frag", "geomShader.geom");
+	Shader planetShader("planet.vert", "planet.frag");
 	// Shader depthTestShader("depthTest.vert", "depthTest.frag", "explodingGeom.geom");
 	Shader depthTestShader("depthTest.vert", "depthTest.frag");
-	Shader normalDisplayShader("normalDisplay.vert", "normalDisplay.frag", "normalDisplay.geom");
 	Shader instancingShader("framebuffer.vert", "framebuffer.frag");
 
-	Shader blueShader("uboShader.vert", "blueShader.frag");
-	Shader greenShader("uboShader.vert", "greenShader.frag");
-	Shader redShader("uboShader.vert", "redShader.frag");
-	Shader yellowShader("uboShader.vert", "yellowShader.frag");
+	Shader cubeShader("geomShader.vert", "geomShader.frag");
+	Shader screenShader("screen.vert", "screen.frag");
+
+	unsigned int quadVAO, quadVBO; 
+	glGenBuffers(1, &quadVBO);
+	glGenVertexArrays(1, &quadVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices[0], GL_STATIC_DRAW);
+	glBindVertexArray(quadVAO);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2*sizeof(float)));
+	glBindVertexArray(0);
+
+	unsigned int cubeVAO, cubeVBO; 
+	glGenBuffers(1, &cubeVBO);
+	glGenVertexArrays(1, &cubeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices[0], GL_STATIC_DRAW);
+	glBindVertexArray(cubeVAO);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+	glBindVertexArray(0);
+
+	unsigned int fbo;
+	glGenBuffers(1, &fbo);
+	glBindBuffer(GL_FRAMEBUFFER, fbo);
+	unsigned int numSamples = 4;
+	// Attach 2D multisample texture image as the color buffer (but with higher resolution)
+	unsigned int fbTex;
+	glGenTextures(1, &fbTex);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fbTex);
+	// alloc space for this texture obj on GPU
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGB, SCR_WIDTH, SCR_HT, GL_TRUE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+	// bind this texture obj to framebuffer obj
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, fbTex, 0);
+
+	// Create a renderbuffer object that can represent depth, stencil, depth + stencil, or color buffer (the multisampled versions)
+	unsigned int rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	// Alloc space for the depth+stencil buffers
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, numSamples, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HT);
+	// bind this renderbuffer obj to framebuffer obj
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+	glBindBuffer(GL_FRAMEBUFFER, 0);
+
+	// Since multisample color + depth + stencil buffers are very larger in size than the resulting color buffer we want to render to
+	// need to downscale the color buffer:
+	// 
+	// Read from off-screen rendered framebuffer object and write to default framebuffer after scene is drawn off-screen
+	glBindFramebuffer(GL_READ_BUFFER, fbo);
+	glBindFramebuffer(GL_DRAW_BUFFER, 0);
+
+	// Down-res the multisampled color buffer before copying the color buffer pixels over
+	glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HT, 0, 0, SCR_WIDTH, SCR_HT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 	unsigned int ubo;
 	glGenBuffers(1, &ubo);
@@ -240,77 +204,25 @@ int main() {
 	glBindBufferRange(GL_UNIFORM_BUFFER, 2, ubo, 0, sizeof(Matrices));
 
 	// get the uniform block location in each shader and bind it to an index
-	unsigned int bMatIdx = glGetUniformBlockIndex(blueShader.ID, "Matrices");
-	unsigned int gMatIdx = glGetUniformBlockIndex(greenShader.ID, "Matrices");
-	unsigned int rMatIdx = glGetUniformBlockIndex(redShader.ID, "Matrices");
-	unsigned int yMatIdx = glGetUniformBlockIndex(yellowShader.ID, "Matrices");
-
 	unsigned int instMatIdx = glGetUniformBlockIndex(instancingShader.ID, "Matrices");
 	glUniformBlockBinding(instancingShader.ID, instMatIdx, 2);
-
+	unsigned int planetShaderMatIdx = glGetUniformBlockIndex(planetShader.ID, "Matrices");
+	glUniformBlockBinding(planetShader.ID, planetShaderMatIdx, 2);
 	// obtain the "Matrices" uniform block location for depthTestShader
 	unsigned int explodeMatrixIdx = glGetUniformBlockIndex(depthTestShader.ID, "Matrices");
-	unsigned int normalDispMatrixIdx = glGetUniformBlockIndex(normalDisplayShader.ID, "Matrices");
-	// bind this unif blk idx on the GPU / Shader side to binding number 2 (Prior, we already binded the UBO to binding no. 2 as well)
-	glUniformBlockBinding(depthTestShader.ID, explodeMatrixIdx, 2);
-	glUniformBlockBinding(normalDisplayShader.ID, normalDispMatrixIdx, 2);
-
 	// bind the unif block location to some block index for each shader prog:
-	glUniformBlockBinding(blueShader.ID, bMatIdx, 2);
-	glUniformBlockBinding(greenShader.ID, gMatIdx, 2);
-	glUniformBlockBinding(redShader.ID, rMatIdx, 2);
-	glUniformBlockBinding(yellowShader.ID, yMatIdx, 2);
-
-	unsigned int metalTex = LoadTexture("textures/metal.png");
-	unsigned int marbleTex = LoadTexture("textures/marble.jpg");
-	unsigned int windowTex = LoadTexture("textures/blending_transparent_window.png");
-
-	unsigned int cubeVAO, cubeVBO;
-	glGenVertexArrays(1, &cubeVAO);
-	glBindVertexArray(cubeVAO);
-	// always bind buffer before passing in buffer data
-	glGenBuffers(1, &cubeVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
-	glEnableVertexAttribArray(2);
-	glBindVertexArray(0);
+	glUniformBlockBinding(depthTestShader.ID, explodeMatrixIdx, 2);
+	unsigned int cubeMatIdx = glGetUniformBlockIndex(cubeShader.ID, "Matrices");
+	glUniformBlockBinding(cubeShader.ID, cubeMatIdx, 2);
 
 	// Model backpackModel("./BackpackModel/backpack.obj");
-	Model asteroidModel("./textures/planets/asteroid/rock.obj");
-	Model planetModel("./textures/planets/planet.obj");
+	// Model asteroidModel("./textures/rock/rock.obj");
+	// Model planetModel("./textures/planet/planet.obj");
 
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
-
-	std::vector<std::string> faces {
-	    "textures/skybox/right.jpg",
-	    "textures/skybox/left.jpg",
-	    "textures/skybox/top.jpg",
-	    "textures/skybox/bottom.jpg",
-	    "textures/skybox/front.jpg",
-	    "textures/skybox/back.jpg"
-	};
-
-	unsigned int skyboxVAO, skyboxVBO;
-	glGenVertexArrays(1, &skyboxVAO);
-	glGenBuffers(1, &skyboxVBO);
-	glBindVertexArray(skyboxVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-	glEnableVertexAttribArray(0);
-	glBindVertexArray(0);
-
-	unsigned int cubemapTex = LoadCubemap(faces);
-
 	// bind the ubo to the same index
 	Matrices mat1;
-
 	mat1.view = glm::mat4(glm::mat3(camActor.getViewMatrix()));
 	mat1.proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 1000.0f);
 
@@ -323,33 +235,83 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
 	// Calculate the displament for 1000 asteroid model matrices
-	int count = 1000;
+	int count = 10000;
 	std::unique_ptr<glm::mat4[]> modelMats;
-	modelMats = std::make_unique<glm::mat4[]>(1000);
+	modelMats = std::make_unique<glm::mat4[]>(count);
 	srand(glfwGetTime());
-	float radius = 50.0f;
-	offset = 2.5f;
-	for (int i = 0; i < count; ++i) {
-		glm::mat4 model(1.0);
-		float angle = ((float)i / (float)count) * 360.0f;
-		// generate any random value between 0.0 and 2.5:
-		float displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
-		float x = sin(angle) * radius + displacement;
-		displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
-		// limit y displacement so that asteroids scattering still looks like a 'belt'
-		float y = displacement * 0.4f; 
-		displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
-		float z = cos(angle) * radius + displacement;
-		model = glm::translate(model, glm::vec3(x, y, z));
+	float radOuter = 100.0f;
+	float radInner = 50.0f;
 
-		// influence the scale 
-		// 0.05 and 0.25
-		model = glm::scale(model, glm::vec3((rand() % 20)/100.0 + (0.05)));
+	float offset = 10.0f;
+	// for (int i = 0; i < count; ++i) {
+	// 	glm::mat4 model(1.0);
+	// 	float angle = ((float)i / (float)count) * 360.0f;
+	// 	// generate any random value between 0.0 and 2.5:
+	// 	float displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
+	// 	float x = sin(angle) * radInner + displacement;
+	// 	displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
+	// 	float z = cos(angle) * radInner + displacement;
+	// 	displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
+	// 	// limit y displacement so that asteroids scattering still looks like a 'belt'
+	// 	float y = displacement * 0.4f;
 
-		// influence rotation
-		model = glm::rotate(model, float(rand() % 360), glm::vec3(0.25, 0.6, 0.9));
-		modelMats[i] = model;
-	}
+	// 	model = glm::translate(model, glm::vec3(x, y, z));
+
+	// 	// influence the scale 
+	// 	// 0.05 and 0.25
+	// 	model = glm::scale(model, glm::vec3((rand() % 20)/100.0 + (0.05)));
+
+	// 	// influence rotation
+	// 	model = glm::rotate(model, float(rand() % 360), glm::vec3(0.25, 0.6, 0.9));
+	// 	modelMats[i] = model;
+	// }
+	
+	// bind the VAO for the asteroid mesh
+	// then bind this IBO into the VAO
+
+	// Instance buffer object (an additional layout location required on the shader)
+	// unsigned int IBO;
+	// glGenBuffers(1, &IBO);
+	// glBindBuffer(GL_ARRAY_BUFFER, IBO);
+	// glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4)*count, &modelMats.get()[0], GL_STATIC_DRAW);
+	// for (int i = 0; i < asteroidModel.meshes.size(); ++i) {
+	// 	glBindVertexArray(asteroidModel.meshes[i].VAO);
+	// 	glEnableVertexAttribArray(3);
+	// 	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+	// 	glEnableVertexAttribArray(4);
+	// 	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+	// 	glEnableVertexAttribArray(5);
+	// 	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2*sizeof(glm::vec4)));
+	// 	glEnableVertexAttribArray(6);
+	// 	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3*sizeof(glm::vec4)));
+
+	// 	// Go to the next mat4 elem in the instance array (in this case, an array of 1000 glm::mat4's)
+	// 	glVertexAttribDivisor(3, 1);
+	// 	glVertexAttribDivisor(4, 1);
+	// 	glVertexAttribDivisor(5, 1);
+	// 	glVertexAttribDivisor(6, 1);
+
+	// 	glBindVertexArray(0);
+	// }
+
+	// Generate another FBO attached with a color buffer of the same dimensions, in order to blit 
+	// the multisampled 2D texture (down-res), and then render that intermediate FBO onto a 2D texture 
+	// Switch over to default frame buffer and render the Quad (taking up the entire screen space) using the 
+	// intermediate FBO's attached texture as the texture for the quad
+
+	unsigned int interFBO;
+	glGenFramebuffers(1, &interFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, interFBO);
+	unsigned int interTex;
+	glGenTextures(1, &interTex);
+	glBindTexture(GL_TEXTURE_2D, interTex);
+	// This color buffer remains empty for now --hence NULL
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// bind the tex ID to the framebuffer as a color attachment
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, interTex, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -363,30 +325,64 @@ int main() {
 		}
 		cmds.clear();
 
-		// do off-screen rendering on the bound frame buffer object
+		// clear default frame buffer depth and colors
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-			
-		// geomShader.use();
-		// glBindVertexArray(pointsVAO);
-		// glDrawArrays(GL_POINTS, 0, 4);
-		
 
+		// clear multi-sample fbo depth and colors
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+		// Enable depth test so that objects in the scene get overwritten if they are closer to the camera
+		glEnable(GL_DEPTH_TEST);
+			
+		// Set all transf matrices
 		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(camActor.getViewMatrix()));
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		
-		instancingShader.use();
+
+		cubeShader.use();
 		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
-		instancingShader.setMat4("model", model);
-		planetModel.Draw(instancingShader);
-		for (int i = 0; i < count; ++i) {
-			instancingShader.setMat4("model", modelMats[i]);
-			asteroidModel.Draw(instancingShader);
-		}
-		// glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+		cubeShader.setMat4("model", model);
+
+		glBindVertexArray(cubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// Copy the multisample color buffer to the regular color buffer (write this downres-ed image to the intermediate FBO's attached texture)
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, interFBO);
+		glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HT, 0, 0, SCR_WIDTH, SCR_HT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		
+		// set to default framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		// Disable depth test so that quad gets rendered regardless of whats in the depth buffer
+		glDisable(GL_DEPTH_TEST);
+
+		screenShader.use();
+		screenShader.setInt("quadTex", 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, interTex);
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		// planetShader.use();
+		// glm::mat4 model(1.0f);
+		// model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
+		// model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
+		// planetShader.setMat4("model", model);
+		// planetModel.Draw(planetShader);
+
+		// instancingShader.use();
+		// instancingShader.setInt("mat.texture_diffuse1", 0);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, asteroidModel.textures_loaded[0].ID);
+		// for (int i = 0; i < asteroidModel.meshes.size(); ++i) {
+		// 	glBindVertexArray(asteroidModel.meshes[i].VAO);
+		// 	glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(asteroidModel.meshes[i].indices.size()), GL_UNSIGNED_INT, 0, count);
+		// 	// asteroidModel.Draw(instancingShader);
+		// 	glBindVertexArray(0);
+		// }
 
 		// QUESTION: Why doesn't the screen show if the view matrix is not updated every frame?..
 
@@ -398,9 +394,6 @@ int main() {
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-	glDeleteVertexArrays(1, &cubeVAO);
-	glDeleteVertexArrays(1, &skyboxVAO);
-	glDeleteVertexArrays(1, &pointsVAO);
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------

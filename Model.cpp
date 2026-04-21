@@ -86,7 +86,6 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 		std::vector<Texture> normalMaps = loadMaterialTextures(mat, aiTextureType_NORMALS, "texture_normals");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-		// ambient??
 	}
 
 	return Mesh(vertices, indices, textures);
@@ -102,18 +101,26 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 		mat->GetTexture(type, i, &fileName);
 		// Check loaded_textures to see if we've loaded this texture file before, and retrieve it from there
 		// to prevent re-loeading the texture from the file path more than once
-		if (textures_loaded.find(fileName.C_Str()) != textures_loaded.end()) {
-			texture = textures_loaded[fileName.C_Str()];
+		auto it = textures_loaded.begin();
+		bool skip = false;
+		for (int j = 0; j < textures_loaded.size(); ++j) {
+			if (std::strcmp(textures_loaded[j].path.data(), fileName.C_Str()) == 0) {
+				textures.push_back(textures_loaded[j]);
+				skip = true;
+				break;
+			}
 		}
-		else {
+
+		if (!skip) {
 			texture.ID = TextureFromFile(fileName.C_Str(), directory.c_str());
 			texture.type = typeName;
 			// This path is relative to the location of the model object
 			texture.path = fileName.C_Str();
-			textures_loaded.insert({ texture.path, texture });
+			textures_loaded.push_back(texture);
+			textures.push_back(texture);
 		}
-		textures.push_back(texture);
 	}
+
 	return textures;
 }
 
