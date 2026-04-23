@@ -14,11 +14,11 @@ void Mesh::Draw(Shader& shader) {
 		std::string num;
 		glActiveTexture(GL_TEXTURE0 + i);
 		if (name == "texture_diffuse") {
-			num = diffuseNum++;
+			num = std::to_string(diffuseNum++);
 		} else if (name == "texture_specular") {
-			num = specularNum++;
+			num = std::to_string(specularNum++);
 		} else if (name == "texture_normal") {
-			num = normalsNum++;
+			num = std::to_string(normalsNum++);
 		} // height map??
 
 		shader.setInt(("mat." + name + num).c_str(), i);
@@ -31,7 +31,7 @@ void Mesh::Draw(Shader& shader) {
 	glBindVertexArray(0);
 
 	// Set active texture back to 0 by default as good practice
-	glActiveTexture(0);
+	glActiveTexture(GL_TEXTURE0);
 }
 
 void Mesh::setupMesh() {
