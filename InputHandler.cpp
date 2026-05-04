@@ -6,11 +6,14 @@ InputHandler::InputHandler(GLFWwindow* win) {
 	buttonA = new MoveCommand(LEFT);
 	buttonS = new MoveCommand(BACKWARD);
 	buttonD = new MoveCommand(RIGHT);
+	buttonE = new MoveCommand(UP);
+	buttonQ = new MoveCommand(DOWN);
 	buttonEsc = new CloseWinCommand(win);
 	buttonSpace = new JumpCommand();
 	noButton = new NoCommand();
                                 
 	mixVal = .0f;
+	blinn = false;
 }
 
 void InputHandler::processInput(GLFWwindow* window, std::vector<Command*>& cmds, Shader* shaderProg) {
@@ -29,14 +32,36 @@ void InputHandler::processInput(GLFWwindow* window, std::vector<Command*>& cmds,
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		cmds.push_back(buttonD);
 	}
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+		cmds.push_back(buttonE);
+	}
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+		cmds.push_back(buttonQ);
+	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		cmds.push_back(buttonSpace);
 	}
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+		if (shaderProg) {
+			blinn = true;
+			shaderProg->use();
+			shaderProg->setBool("blinn", blinn);
+		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
+		if (shaderProg) {
+			blinn = false;
+			shaderProg->use();
+			shaderProg->setBool("blinn", blinn);
+		}
+	}
+
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
 		if (shaderProg) {
 			mixVal += .01f;
 			if (mixVal > 1.0f)
 				mixVal = 1.0f;
+			shaderProg->use();
 			shaderProg->setFloat("mixValue", mixVal);
 		}
 	}
@@ -45,6 +70,7 @@ void InputHandler::processInput(GLFWwindow* window, std::vector<Command*>& cmds,
 			mixVal -= .01f;
 			if (mixVal < .0f)
 				mixVal = .0f;
+			shaderProg->use();
 			shaderProg->setFloat("mixValue", mixVal);
 		}
 	}

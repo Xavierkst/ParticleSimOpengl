@@ -32,7 +32,13 @@ void Camera::ProcessKeyboard(const CameraMovement dir, const float deltaTime) {
 	case RIGHT:
 		setPos(getPos() + (velo * glm::vec3(camRight)));
 		break;
-	case UP: {
+	case UP:
+		setPos(getPos() + (velo * glm::vec3(.0f, 1.0f, .0f)));
+		break;
+	case DOWN:
+		setPos(getPos() - (velo * glm::vec3(.0, 1.0f, 0.0f)));
+		break;
+	case JUMP: {
 		veloY = SPEED;
 		grounded = false;
 		break;

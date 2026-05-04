@@ -14,11 +14,14 @@ public:
 	~InputHandler();
 	// TODO: Add a function that manages re-mapping which button pertains to which action/command.
 
+	bool blinn; // toggles blinn-phong shading
 private:
 	Command* buttonW;
 	Command* buttonA;
 	Command* buttonS;
 	Command* buttonD;
+	Command* buttonE;
+	Command* buttonQ;
 	Command* buttonEsc;
 	Command* buttonSpace;
 	Command* noButton;

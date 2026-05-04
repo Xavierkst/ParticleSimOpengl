@@ -67,16 +67,15 @@ int main() {
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	// int flags; 
-	// glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-
-	// if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
-	// {
+	int flags; 
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+	{
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(glDebugOutput, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-	// }
+	}
 
 	// GLint profileMask;
 	// glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &profileMask);
@@ -141,6 +140,17 @@ int main() {
         -0.5f,  0.5f,  0.5f,
         -0.5f,  0.5f, -0.5f
     };
+	float planeVertices[] = {
+        // positions            // normals         // texcoords
+         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+        -10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+
+         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+         10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+    };
+
 
 	struct Matrices {
 		glm::mat4 view;
@@ -157,6 +167,22 @@ int main() {
 
 	Shader cubeShader("geomShader.vert", "geomShader.frag");
 	Shader screenShader("screen.vert", "screen.frag");
+
+	unsigned int woodTex = LoadTexture("wood.png");
+
+	unsigned int planeVAO, planeVBO;
+	glGenBuffers(1, &planeVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+	glGenVertexArrays(1, &planeVAO);
+	glBindVertexArray(planeVAO);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3* sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (6* sizeof(float)));
+	glBindVertexArray(0);
 
 	unsigned int quadVAO, quadVBO; 
 	glGenBuffers(1, &quadVBO);

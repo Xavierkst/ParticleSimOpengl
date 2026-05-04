@@ -7,7 +7,7 @@ void NoCommand::execute(Camera& actor, float deltaTime) {
 
 void JumpCommand::execute(Camera& actor, float deltaTime) {
 	if (actor.isGrounded()) {
-		actor.ProcessKeyboard(UP, deltaTime);
+		actor.ProcessKeyboard(JUMP, deltaTime);
 	}
 }
 
