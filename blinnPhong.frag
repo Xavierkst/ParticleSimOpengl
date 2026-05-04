@@ -48,17 +48,19 @@ struct SpotLight {
 	vec3 specular;
 };
 
-in vec2 textureCoords;
 in vec4 FragPos;
 in vec4 Normal;
+in vec2 textureCoords;
 
-#define NR_POINT_LIGHTS 4
+#define NR_POINT_LIGHTS 1
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform DirLight dirLight;
 uniform SpotLight spotLight;
 uniform Material mat;
 uniform float time;
 uniform vec4 viewPos;
+
+uniform bool blinn;
 
 uniform mat4 proj;
 uniform mat4 view;
@@ -72,7 +74,7 @@ vec3 phongShading(vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular, vec4
 void main()
 {
 	// contribution from pointLight + dirLight
-	vec3 dirLightColor = calculateDirLight(dirLight);
+	// vec3 dirLightColor = calculateDirLight(dirLight);
 
 	vec3 pointLightColor;
 	for (int i = 0; i < NR_POINT_LIGHTS; ++i) {
@@ -80,15 +82,16 @@ void main()
 	}
 
 	// contribution from spotLight
-	vec3 spotLightColor = calculateSpotLight(spotLight);
+	// vec3 spotLightColor = calculateSpotLight(spotLight);
 
 	// Emission map
-	vec3 specMapComponent = texture(mat.texture_specular0, textureCoords).rgb;
-	vec3 emissionColor = texture(mat.emission, textureCoords + vec2(0.0f, time)).rgb;
-	vec3 emissionMask = step(vec3(1.0f), vec3(1.0f) - specMapComponent);
-	emissionColor *= emissionMask;
+	// vec3 specMapComponent = texture(mat.texture_specular0, textureCoords).rgb;
+	// vec3 emissionColor = texture(mat.emission, textureCoords + vec2(0.0f, time)).rgb;
+	// vec3 emissionMask = step(vec3(1.0f), vec3(1.0f) - specMapComponent);
+	// emissionColor *= emissionMask;
 
-	vec3 res = dirLightColor + pointLightColor + spotLightColor;
+	// vec3 res = dirLightColor + pointLightColor + spotLightColor;
+	vec3 res = pointLightColor;
 	FragColor = vec4(res, 1.0f);
 }
 
@@ -143,13 +146,26 @@ vec3 phongShading(vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular, vec4
 
 	float diff = max(dot(lightDir, norm), 0.0f);
 	vec3 diffuse = lightDiffuse * diff * texture(mat.texture_diffuse0, textureCoords).rgb;
-	
+
 	// obtain incoming lightDir and normal, and pass into reflect
 	// Use reflected ray vec and dot with viewDir vec, clamp to 0, and raise to shininess
+	vec4 vecDir;
+	float shininess = 0.0f;
 	vec4 viewDir = normalize(viewPos - FragPos);
-	vec4 reflectedLight = reflect(-lightDir, norm);
-	float spec = pow(max(dot(reflectedLight, viewDir), 0.0f), mat.shininess);
-	vec3 specular = spec * lightSpecular * texture(mat.texture_specular0, textureCoords).rgb;
+	if (!blinn) {
+		// use reflectedLight
+		vecDir = reflect(-lightDir, norm);
+		shininess = 32.0f;
+	} else {
+		// use halfway vec for blinn-phong
+		vecDir = normalize(viewDir + lightDir);
+		shininess = 8.0f;
+	}
+	
+	// float spec = pow(max(dot(vecDir, norm), 0.0f), mat.shininess);
+	float spec = pow(max(dot(vecDir, norm), 0.0f), shininess);
+	// vec3 specular = spec * lightSpecular * texture(mat.texture_specular0, textureCoords).rgb;
+	vec3 specular = spec * lightSpecular * texture(mat.texture_diffuse0, textureCoords).rgb;
 
 	return ambient + diffuse + specular;
 }

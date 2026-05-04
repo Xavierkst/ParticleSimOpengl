@@ -96,50 +96,6 @@ int main() {
          1.0f,  1.0f,  1.0f, 1.0f
     };
 
-	 float cubeVertices[] = {
-        // positions       
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-
-        -0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-        -0.5f, -0.5f,  0.5f,
-
-        -0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-        -0.5f, -0.5f,  0.5f,
-        -0.5f, -0.5f, -0.5f,
-
-        -0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f, -0.5f
-    };
 	float planeVertices[] = {
         // positions            // normals         // texcoords
          10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
@@ -162,13 +118,13 @@ int main() {
 	// Shader geomShader("geomShader.vert", "geomShader.frag", "geomShader.geom");
 	Shader planetShader("planet.vert", "planet.frag");
 	// Shader depthTestShader("depthTest.vert", "depthTest.frag", "explodingGeom.geom");
-	Shader depthTestShader("depthTest.vert", "depthTest.frag");
 	Shader instancingShader("framebuffer.vert", "framebuffer.frag");
+	Shader blinnPhongShader("blinnPhong.vert", "blinnPhong.frag");
 
 	Shader cubeShader("geomShader.vert", "geomShader.frag");
 	Shader screenShader("screen.vert", "screen.frag");
 
-	unsigned int woodTex = LoadTexture("wood.png");
+	unsigned int woodTex = LoadTexture("./textures/wood.png");
 
 	unsigned int planeVAO, planeVBO;
 	glGenBuffers(1, &planeVBO);
@@ -194,16 +150,6 @@ int main() {
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2*sizeof(float)));
-	glBindVertexArray(0);
-
-	unsigned int cubeVAO, cubeVBO; 
-	glGenBuffers(1, &cubeVBO);
-	glGenVertexArrays(1, &cubeVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices[0], GL_STATIC_DRAW);
-	glBindVertexArray(cubeVAO);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
 	glBindVertexArray(0);
 
 	unsigned int fbo;
@@ -243,18 +189,13 @@ int main() {
 	glBindBufferRange(GL_UNIFORM_BUFFER, 2, ubo, 0, sizeof(Matrices));
 
 	// get the uniform block location in each shader and bind it to an index
-	unsigned int instMatIdx = glGetUniformBlockIndex(instancingShader.ID, "Matrices");
-	glUniformBlockBinding(instancingShader.ID, instMatIdx, 2);
-	unsigned int planetShaderMatIdx = glGetUniformBlockIndex(planetShader.ID, "Matrices");
-	glUniformBlockBinding(planetShader.ID, planetShaderMatIdx, 2);
-	unsigned int cubeMatIdx = glGetUniformBlockIndex(cubeShader.ID, "Matrices");
-	glUniformBlockBinding(cubeShader.ID, cubeMatIdx, 2);
+	unsigned int blinnPhongIdx = glGetUniformBlockIndex(blinnPhongShader.ID, "Matrices");
+	glUniformBlockBinding(blinnPhongShader.ID, blinnPhongIdx, 2);
 
 	// Model backpackModel("./BackpackModel/backpack.obj");
-	Model asteroidModel("./textures/rock/rock.obj");
-	Model planetModel("./textures/planet/planet.obj");
-	// store button commands, process them, and clear out at the end of the frame
-	std::vector<Command*> cmds;
+	// Model asteroidModel("./textures/rock/rock.obj");
+	// Model planetModel("./textures/planet/planet.obj");
+
 	Matrices mat1;
 	mat1.view = glm::mat4(glm::mat3(camActor.getViewMatrix()));
 	mat1.proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 1000.0f);
@@ -264,65 +205,6 @@ int main() {
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(mat1.proj));
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	// Calculate the displament for 1000 asteroid model matrices
-	int count = 1000;
-	std::unique_ptr<glm::mat4[]> modelMats;
-	modelMats = std::make_unique<glm::mat4[]>(count);
-	srand(glfwGetTime());
-	float radOuter = 100.0f;
-	float radInner = 50.0f;
-	float offset = 10.0f;
-	for (int i = 0; i < count; ++i) {
-		glm::mat4 model(1.0);
-		float angle = ((float)i / (float)count) * 360.0f;
-		// generate any random value between 0.0 and 2.5:
-		float displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
-		float x = sin(angle) * radInner + displacement;
-		displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
-		float z = cos(angle) * radInner + displacement;
-		displacement = (rand() % (int)(2 * offset * 100)) / 100.0 - offset;
-		// limit y displacement so that asteroids scattering still looks like a 'belt'
-		float y = displacement * 0.4f;
-
-		model = glm::translate(model, glm::vec3(x, y, z));
-		// influence the scale 
-		// 0.05 and 0.25
-		model = glm::scale(model, glm::vec3((rand() % 20)/100.0 + (0.05)));
-		// influence rotation
-		model = glm::rotate(model, float(rand() % 360), glm::vec3(0.25, 0.6, 0.9));
-		modelMats[i] = model;
-	}
-	
-	// bind the VAO for the asteroid mesh
-	// then bind this IBO into the VAO
-
-	// Instance buffer object (an additional layout location required on the shader)
-	unsigned int IBO;
-	glGenBuffers(1, &IBO);
-	glBindBuffer(GL_ARRAY_BUFFER, IBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4)*count, &modelMats.get()[0], GL_STATIC_DRAW);
-	for (int i = 0; i < asteroidModel.meshes.size(); ++i) {
-		glBindVertexArray(asteroidModel.meshes[i].VAO);
-		// The largest layout variable that any location can take is a vec4. So, a mat4 needs 4 
-		// integer locations since it comprises of 4 vec4's:
-		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
-		glEnableVertexAttribArray(4);
-		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
-		glEnableVertexAttribArray(5);
-		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2*sizeof(glm::vec4)));
-		glEnableVertexAttribArray(6);
-		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3*sizeof(glm::vec4)));
-
-		// Go to the next mat4 elem in the instance array (in this case, an array of 1000 glm::mat4's)
-		glVertexAttribDivisor(3, 1);
-		glVertexAttribDivisor(4, 1);
-		glVertexAttribDivisor(5, 1);
-		glVertexAttribDivisor(6, 1);
-
-		glBindVertexArray(0);
-	}
 
 	// Generate another FBO attached with a color buffer of the same dimensions, in order to blit 
 	// the multisampled 2D texture (down-res), which allows us to perform post-processing on the 
@@ -347,15 +229,18 @@ int main() {
 	screenShader.use();
 	screenShader.setInt("quadTex", 0);
 
-	planetShader.use();
-	glm::mat4 model(1.0f);
-	model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
-	planetShader.setMat4("model", model);
-	planetShader.setInt("mat.texture_diffuse1", 0);
+	blinnPhongShader.use();
+	blinnPhongShader.setFloat("pointLights[0].constant", 1.0f);
+	blinnPhongShader.setFloat("pointLights[0].linear", 0.09f);
+	blinnPhongShader.setFloat("pointLights[0].quadratic", 0.032f);
+	blinnPhongShader.setVec4("pointLights[0].position", glm::vec4(0.0f,.0f,.0f,1.0f));
+	blinnPhongShader.setVec3("pointLights[0].ambient", glm::vec3(0.05f));
+	blinnPhongShader.setVec3("pointLights[0].diffuse", glm::vec3(1.0f));
+	blinnPhongShader.setVec3("pointLights[0].specular", glm::vec3(0.3f));
+	blinnPhongShader.setInt("mat.texture_diffuse0", 0);
 
-	instancingShader.use();
-	instancingShader.setInt("texture_diffuse1", 0);
+	// store button commands, process them, and clear out at the end of the frame
+	std::vector<Command*> cmds;
 
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -363,7 +248,7 @@ int main() {
 		lastFrame = currentFrame;
 
 		// Process key/mouse input
-		inputHandler.processInput(window, cmds);
+		inputHandler.processInput(window, cmds, &blinnPhongShader);
 		for (auto& cmd : cmds) {
 			cmd->execute(camActor, deltaTime);
 		}
@@ -384,20 +269,17 @@ int main() {
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(camActor.getViewMatrix()));
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-		planetShader.use();
-		planetModel.Draw(planetShader);
-
-		instancingShader.use();
+		blinnPhongShader.use();
+		glm::mat4 model(1.0f);
+		blinnPhongShader.setMat4("model", model);
+		glBindVertexArray(planeVAO);
+		// Activate TEXTURE0 and bind texture ID to TEXTURE0
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, asteroidModel.textures_loaded[0].ID);
-		for (int i = 0; i < asteroidModel.meshes.size(); ++i) {
-			glBindVertexArray(asteroidModel.meshes[i].VAO);
-			glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(asteroidModel.meshes[i].indices.size()), GL_UNSIGNED_INT, 0, count);
-			glBindVertexArray(0);
-		}
+		glBindTexture(GL_TEXTURE_2D, woodTex);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+        std::cout << (inputHandler.blinn ? "Blinn-Phong" : "Phong") << std::endl;
 
 		// Copy the multisample color buffer to the regular color buffer (write this downres-ed image to the intermediate FBO's attached texture)
-
 		// Note: You do not need this line since binding with GL_FRAMEBUFFER is both a bind as the READ & DRAW Framebuffer
 		// glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo); 
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, interFBO);
@@ -431,59 +313,6 @@ int main() {
 	// glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
 	return 0;
-}
-
-void APIENTRY glDebugOutput(GLenum source, 
-                            GLenum type, 
-                            unsigned int id, 
-                            GLenum severity, 
-                            GLsizei length, 
-                            const char *message, 
-                            const void *userParam)
-{
-    // ignore non-significant error/warning codes
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
-
-    std::cout << "---------------" << std::endl;
-    std::cout << "Debug message (" << id << "): " <<  message << std::endl;
-
-    switch (source)
-    {
-        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
-        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
-        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
-    } std::cout << std::endl;
-
-    switch (type)
-    {
-        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break; 
-        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
-        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
-        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
-        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
-        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
-    } std::cout << std::endl;
-    
-    switch (severity)
-    {
-        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
-        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
-        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
-    } std::cout << std::endl;
-    std::cout << std::endl;
-}
-
-// when window dimension is altered by the user, gl should immediately
-// pick up on it and resize the viewport accordingly
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, width, height);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
@@ -577,5 +406,58 @@ unsigned int LoadCubemap(std::vector<std::string>& faces) {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	return texID;
+}
+
+// when window dimension is altered by the user, gl should immediately
+// pick up on it and resize the viewport accordingly
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+	glViewport(0, 0, width, height);
+}
+
+void APIENTRY glDebugOutput(GLenum source, 
+                            GLenum type, 
+                            unsigned int id, 
+                            GLenum severity, 
+                            GLsizei length, 
+                            const char *message, 
+                            const void *userParam)
+{
+    // ignore non-significant error/warning codes
+    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
+
+    std::cout << "---------------" << std::endl;
+    std::cout << "Debug message (" << id << "): " <<  message << std::endl;
+
+    switch (source)
+    {
+        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
+        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
+        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+    } std::cout << std::endl;
+
+    switch (type)
+    {
+        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break; 
+        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
+        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
+        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
+        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+    } std::cout << std::endl;
+    
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
+        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
+        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+    } std::cout << std::endl;
+    std::cout << std::endl;
 }
 
