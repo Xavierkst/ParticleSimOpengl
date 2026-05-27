@@ -44,6 +44,5 @@ void main() {
 
     // // FragColor = vec4(res, 1.0);
     float fragDepth = texture(quadTex, texCoords).r;
-    // calculate the distance between the light and the fragment (in NDC space), so its somewhere between [-1, 1]
 	FragColor = vec4(vec3(fragDepth), 1.0f);
 }

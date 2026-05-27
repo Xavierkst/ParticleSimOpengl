@@ -113,15 +113,10 @@ int main() {
 
 	glEnable(GL_MULTISAMPLE);
 
-	// Shader geomShader("geomShader.vert", "geomShader.frag", "geomShader.geom");
-	// Shader planetShader("planet.vert", "planet.frag");
-	// Shader depthTestShader("depthTest.vert", "depthTest.frag", "explodingGeom.geom");
-	// Shader instancingShader("framebuffer.vert", "framebuffer.frag");
 	Shader blinnPhongShader("blinnPhong.vert", "blinnPhong.frag");
-
-	// Shader cubeShader("geomShader.vert", "geomShader.frag");
 	Shader screenShader("screen.vert", "screen.frag");
 	Shader shadowMapShader("shadowMap.vert", "shadowMap.frag");
+	Shader bpShadowShader("bphongShadow.vert", "bphongShadow.frag");
 
 	unsigned int woodTex = LoadTexture("./textures/wood.png");
 
@@ -188,7 +183,7 @@ int main() {
 
 	Matrices mat1;
 	mat1.view = glm::mat4(glm::mat3(camActor.getViewMatrix()));
-	mat1.proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 1000.0f);
+	mat1.proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
 
 	// Pass in the matrix data to the buffer:
 	// glBindBuffer(GL_UNIFORM_BUFFER, ubo);
@@ -266,47 +261,6 @@ int main() {
 		}
 		cmds.clear();
 
-		// clear multi-sample fbo depth and colors
-		// glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		// glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-		// Enable depth test so that objects in the scene get overwritten if they are closer to the camera
-
-		// // Set all transf matrices
-		// glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		// camActor.setPos(glm::vec3(-2.0, 4.0, -1.0f));
-		// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(camActor.getViewMatrix()));
-		// glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-		// blinnPhongShader.use();
-		// glm::mat4 model(1.0f);
-		// blinnPhongShader.setMat4("model", model);
-		// glBindVertexArray(planeVAO);
-		// // Activate TEXTURE0 and bind texture ID to TEXTURE0
-		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, woodTex);
-		// glDrawArrays(GL_TRIANGLES, 0, 6);
-        // std::cout << (inputHandler.blinn ? "Blinn-Phong" : "Phong") << std::endl;
-
-		// // Copy the multisample color buffer to the regular color buffer (write this downres-ed image to the intermediate FBO's attached texture)
-		// // Note: You do not need this line since binding with GL_FRAMEBUFFER for 'fbo' (above) is both a 
-		// // bind as the READ & DRAW Framebuffer.
-		// // glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo); 
-		// glBindFramebuffer(GL_DRAW_FRAMEBUFFER, interFBO);
-		// // Down-res the multisampled color buffer before copying the color buffer pixels over
-		// glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HT, 0, 0, SCR_WIDTH, SCR_HT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		// 
-		// // set to default framebuffer
-		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		// glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		// glClear(GL_COLOR_BUFFER_BIT);
-		// // Disable depth test so that quad gets rendered regardless of whats in the depth buffer
-		// glDisable(GL_DEPTH_TEST);
-		// screenShader.use();
-		// glBindVertexArray(quadVAO);
-		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, interTex);
-		// glDrawArrays(GL_TRIANGLES, 0, 6);
-		
 		// clear default frame buffer depth and colors
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -323,26 +277,44 @@ int main() {
 		shadowMapShader.setMat4("model", glm::mat4(1.0f));
 		shadowMapShader.setMat4("lightTransform", lightTransform);
 
-		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HT);
 		glBindFramebuffer(GL_FRAMEBUFFER, sfbo);
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, woodTex);
 		// render scene
 		renderScene(shadowMapShader);
 
-		// switch to default framebuffer and render depth map onto it
-		// glDisable(GL_DEPTH_TEST);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, SCR_WIDTH, SCR_HT);
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		screenShader.use();
-		screenShader.setFloat("near_plane", nearPlane);
-		screenShader.setFloat("far_plane", farPlane);
+
+		glm::mat4 model(1.0f);
+		bpShadowShader.use();
+		bpShadowShader.setMat4("model", model);
+		bpShadowShader.setMat4("view", camActor.getViewMatrix());
+		bpShadowShader.setMat4("proj", mat1.proj);
+		bpShadowShader.setMat4("lightTransform", lightTransform);
+		bpShadowShader.setVec3("viewPos", camActor.getPos());
+		bpShadowShader.setVec3("lightPos", lightPos);
+		bpShadowShader.setInt("diffuseTexture", 0);
+		bpShadowShader.setInt("shadowMap", 1);
 		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, woodTex);
+		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-		renderQuad();
+		renderScene(bpShadowShader);
+
+		// switch to default framebuffer and render depth map onto it
+		// glDisable(GL_DEPTH_TEST);
+
+		// screenShader.use();
+		// screenShader.setFloat("near_plane", nearPlane);
+		// screenShader.setFloat("far_plane", farPlane);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, depthMap);
+		// renderQuad();
 	
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -532,7 +504,6 @@ void renderQuad() {
 		};
 		glGenVertexArrays(1, &quadVAO);
 		glGenBuffers(1, &quadVBO);
-
 		glBindVertexArray(quadVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices[0], GL_STATIC_DRAW);
