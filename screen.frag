@@ -2,9 +2,17 @@
 out vec4 FragColor;
 
 in vec2 texCoords;
+
 uniform sampler2D quadTex;
+uniform float near_plane;
+uniform float far_plane;
 
 const float offset = 1.0 / 300.0;
+
+float linearize_depth(float depth) {
+    float z = depth * 2.0 - 1.0;
+    return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane)); 
+}
 
 void main() { 
     // vec2 offsets[9] = vec2[](
@@ -35,5 +43,7 @@ void main() {
     // }
 
     // // FragColor = vec4(res, 1.0);
-	FragColor = texture(quadTex, texCoords);
+    float fragDepth = texture(quadTex, texCoords).r;
+    // calculate the distance between the light and the fragment (in NDC space), so its somewhere between [-1, 1]
+	FragColor = vec4(vec3(fragDepth), 1.0f);
 }

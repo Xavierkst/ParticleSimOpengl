@@ -19,20 +19,29 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 unsigned int LoadTexture(const char* fPath);
 unsigned int LoadCubemap(std::vector<std::string>& faces);
+void renderScene(Shader shader);
+void renderQuad();
+void renderCube();
+
 void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam);
+
 
 
 // Values / Settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HT = 600;
 
+const unsigned int SHADOW_WIDTH = 1024;
+const unsigned int SHADOW_HT = 1024;
+
 Camera camActor;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-float lastX = SCR_WIDTH / 2;
-float lastY = SCR_HT / 2;
+float lastX = (float)SCR_WIDTH / 2.0;
+float lastY = (float)SCR_HT / 2.0;
 bool firstMouse = true;
 
+unsigned int planeVAO = 0;
 
 int main() {
 	glfwInit();
@@ -85,26 +94,15 @@ int main() {
 	// 	std::cout << "You are using the Compatibility Profile" << std::endl;
 	// }
 
-	float quadVertices[] = {   // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-        // positions   // texCoords
-        -1.0f,  1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-
-        -1.0f,  1.0f,  0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f
-    };
-
 	float planeVertices[] = {
-        // positions            // normals         // texcoords
-         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-        -10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+		// positions            // normals         // texcoords
+         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+        -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
 
-         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
-         10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+         25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
     };
 
 
@@ -116,40 +114,29 @@ int main() {
 	glEnable(GL_MULTISAMPLE);
 
 	// Shader geomShader("geomShader.vert", "geomShader.frag", "geomShader.geom");
-	Shader planetShader("planet.vert", "planet.frag");
+	// Shader planetShader("planet.vert", "planet.frag");
 	// Shader depthTestShader("depthTest.vert", "depthTest.frag", "explodingGeom.geom");
-	Shader instancingShader("framebuffer.vert", "framebuffer.frag");
+	// Shader instancingShader("framebuffer.vert", "framebuffer.frag");
 	Shader blinnPhongShader("blinnPhong.vert", "blinnPhong.frag");
 
-	Shader cubeShader("geomShader.vert", "geomShader.frag");
+	// Shader cubeShader("geomShader.vert", "geomShader.frag");
 	Shader screenShader("screen.vert", "screen.frag");
+	Shader shadowMapShader("shadowMap.vert", "shadowMap.frag");
 
 	unsigned int woodTex = LoadTexture("./textures/wood.png");
 
-	unsigned int planeVAO, planeVBO;
+	unsigned int planeVBO;
 	glGenBuffers(1, &planeVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
 	glGenVertexArrays(1, &planeVAO);
 	glBindVertexArray(planeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3* sizeof(float)));
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (6* sizeof(float)));
-	glBindVertexArray(0);
-
-	unsigned int quadVAO, quadVBO; 
-	glGenBuffers(1, &quadVBO);
-	glGenVertexArrays(1, &quadVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices[0], GL_STATIC_DRAW);
-	glBindVertexArray(quadVAO);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2*sizeof(float)));
 	glBindVertexArray(0);
 
 	unsigned int fbo;
@@ -192,6 +179,9 @@ int main() {
 	unsigned int blinnPhongIdx = glGetUniformBlockIndex(blinnPhongShader.ID, "Matrices");
 	glUniformBlockBinding(blinnPhongShader.ID, blinnPhongIdx, 2);
 
+	// unsigned int shadowMapIdx = glGetUniformBlockIndex(shadowMapShader.ID, "Matrices");
+	// glUniformBlockBinding(shadowMapShader.ID, shadowMapIdx, 2);
+
 	// Model backpackModel("./BackpackModel/backpack.obj");
 	// Model asteroidModel("./textures/rock/rock.obj");
 	// Model planetModel("./textures/planet/planet.obj");
@@ -201,10 +191,10 @@ int main() {
 	mat1.proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 1000.0f);
 
 	// Pass in the matrix data to the buffer:
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
-	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(mat1.proj));
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	// glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
+	// glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(mat1.proj));
+	// glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	// Generate another FBO attached with a color buffer of the same dimensions, in order to blit 
 	// the multisampled 2D texture (down-res), which allows us to perform post-processing on the 
@@ -239,8 +229,30 @@ int main() {
 	blinnPhongShader.setVec3("pointLights[0].specular", glm::vec3(0.3f));
 	blinnPhongShader.setInt("mat.texture_diffuse0", 0);
 
+	// shadow map fbo and depth attachment
+	unsigned int sfbo, depthMap;
+	glGenFramebuffers(1, &sfbo);
+	
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sfbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	// specify that this fbo doesn't hold or write to a color attachment
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
+	glm::vec3 lightPos(-2.0, 4.0, -1.0f);
+
+	glEnable(GL_DEPTH_TEST);
 
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -254,51 +266,84 @@ int main() {
 		}
 		cmds.clear();
 
+		// clear multi-sample fbo depth and colors
+		// glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		// glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+		// Enable depth test so that objects in the scene get overwritten if they are closer to the camera
+
+		// // Set all transf matrices
+		// glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		// camActor.setPos(glm::vec3(-2.0, 4.0, -1.0f));
+		// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(camActor.getViewMatrix()));
+		// glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+		// blinnPhongShader.use();
+		// glm::mat4 model(1.0f);
+		// blinnPhongShader.setMat4("model", model);
+		// glBindVertexArray(planeVAO);
+		// // Activate TEXTURE0 and bind texture ID to TEXTURE0
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, woodTex);
+		// glDrawArrays(GL_TRIANGLES, 0, 6);
+        // std::cout << (inputHandler.blinn ? "Blinn-Phong" : "Phong") << std::endl;
+
+		// // Copy the multisample color buffer to the regular color buffer (write this downres-ed image to the intermediate FBO's attached texture)
+		// // Note: You do not need this line since binding with GL_FRAMEBUFFER for 'fbo' (above) is both a 
+		// // bind as the READ & DRAW Framebuffer.
+		// // glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo); 
+		// glBindFramebuffer(GL_DRAW_FRAMEBUFFER, interFBO);
+		// // Down-res the multisampled color buffer before copying the color buffer pixels over
+		// glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HT, 0, 0, SCR_WIDTH, SCR_HT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		// 
+		// // set to default framebuffer
+		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		// glClear(GL_COLOR_BUFFER_BIT);
+		// // Disable depth test so that quad gets rendered regardless of whats in the depth buffer
+		// glDisable(GL_DEPTH_TEST);
+		// screenShader.use();
+		// glBindVertexArray(quadVAO);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, interTex);
+		// glDrawArrays(GL_TRIANGLES, 0, 6);
+		
 		// clear default frame buffer depth and colors
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// clear multi-sample fbo depth and colors
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-		// Enable depth test so that objects in the scene get overwritten if they are closer to the camera
-		glEnable(GL_DEPTH_TEST);
-			
-		// Set all transf matrices
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(camActor.getViewMatrix()));
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		// glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glm::mat4 lightView(glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0)));
+		// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(lightView));
+		float nearPlane = 1.0f, farPlane = 7.5f;
+		glm::mat4 lightProj(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane));
+		glm::mat4 lightTransform = lightProj * lightView;
+		// glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(lightProj));
+		// glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		shadowMapShader.use();
+		shadowMapShader.setMat4("model", glm::mat4(1.0f));
+		shadowMapShader.setMat4("lightTransform", lightTransform);
 
-		blinnPhongShader.use();
-		glm::mat4 model(1.0f);
-		blinnPhongShader.setMat4("model", model);
-		glBindVertexArray(planeVAO);
-		// Activate TEXTURE0 and bind texture ID to TEXTURE0
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HT);
+		glBindFramebuffer(GL_FRAMEBUFFER, sfbo);
+		glClear(GL_DEPTH_BUFFER_BIT);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, woodTex);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-        std::cout << (inputHandler.blinn ? "Blinn-Phong" : "Phong") << std::endl;
+		// render scene
+		renderScene(shadowMapShader);
 
-		// Copy the multisample color buffer to the regular color buffer (write this downres-ed image to the intermediate FBO's attached texture)
-		// Note: You do not need this line since binding with GL_FRAMEBUFFER is both a bind as the READ & DRAW Framebuffer
-		// glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo); 
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, interFBO);
-		// Down-res the multisampled color buffer before copying the color buffer pixels over
-		glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HT, 0, 0, SCR_WIDTH, SCR_HT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		
-		// set to default framebuffer
+		// switch to default framebuffer and render depth map onto it
+		// glDisable(GL_DEPTH_TEST);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		// Disable depth test so that quad gets rendered regardless of whats in the depth buffer
-		glDisable(GL_DEPTH_TEST);
-
+		glViewport(0, 0, SCR_WIDTH, SCR_HT);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		screenShader.use();
-		glBindVertexArray(quadVAO);
-		glBindTexture(GL_TEXTURE_2D, interTex);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		// QUESTION: Why doesn't the screen show if the view matrix is not updated every frame?..
-
+		screenShader.setFloat("near_plane", nearPlane);
+		screenShader.setFloat("far_plane", farPlane);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		renderQuad();
+	
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
@@ -406,6 +451,129 @@ unsigned int LoadCubemap(std::vector<std::string>& faces) {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	return texID;
+}
+
+unsigned int cubeVAO=0, cubeVBO=0;
+void renderCube() {
+	if (cubeVAO == 0) {
+		float vertices[] = {
+			// back face
+			-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+			 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+			 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+			 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+			-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+			-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+			// front face
+			-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+			 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+			 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+			 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+			-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+			-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+			// left face
+			-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+			-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+			-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+			-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+			-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+			-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+			// right face
+			 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+			 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+			 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+			 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+			 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+			 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+			 // bottom face
+			 -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+			  1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+			  1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+			  1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+			 -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+			 -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+			 // top face
+			 -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+			  1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+			  1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+			  1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+			 -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+			 -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+		};
+		glGenVertexArrays(1, &cubeVAO);
+		glGenBuffers(1, &cubeVBO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices[0], GL_STATIC_DRAW);
+		glBindVertexArray(cubeVAO);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+	glBindVertexArray(cubeVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+}
+
+unsigned int quadVAO=0, quadVBO=0;
+void renderQuad() {
+	if (quadVAO == 0) {
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices[0], GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	}
+	// render quad:
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+}
+
+void renderScene(const Shader shader) {
+	// floor
+	glm::mat4 model(1.0f);
+	// model = glm::rotate(model, glm::radians(15.0f), glm::normalize(glm::vec3(0.0, 1.0, 1.0)));
+	shader.setMat4("model", model);
+	glBindVertexArray(planeVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	// cubes
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
+	model = glm::scale(model, glm::vec3(0.5f));
+	shader.setMat4("model", model);
+	renderCube();
+
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0));
+	model = glm::scale(model, glm::vec3(0.5f));
+	shader.setMat4("model", model);
+	renderCube();
+
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 2.0));
+	model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+	model = glm::scale(model, glm::vec3(0.25));
+	shader.setMat4("model", model);
+	renderCube();
 }
 
 // when window dimension is altered by the user, gl should immediately
