@@ -23,11 +23,24 @@ float calcShadow(vec4 lightSpaceFragPos) {
 	// 2. sample texture which requires values in range [0.0, 1.0]
 	fragPosNDC = (fragPosNDC * 0.5) + 0.5;
 	// sample the closest depth value (of some fragment from light's POV)
-	float closestDepth = texture(shadowMap, fragPosNDC.xy).r;
-	float currentDepth = fragPosNDC.z;
 	vec3 lightDir = normalize(lightPos - fs_in.FragPos);
-	float bias = max(0.005, 0.05* (1.0 - dot(lightDir, fs_in.Normal)));
-	float shadow = currentDepth - 0.0009 > closestDepth ? 1.0 : 0.0;
+	// float bias = max(0.005, 0.05* (1.0 - dot(lightDir, fs_in.Normal)));
+	float shadow = 0.0;
+	float currentDepth = fragPosNDC.z;
+	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+
+	for (int x = -1; x <= 1; ++x) {
+		for (int y = -1; y <= 1; ++y) {
+			float percentageCloserFilterDepth = texture(shadowMap, fragPosNDC.xy + texelSize * vec2(x,y)).r;
+			shadow += (currentDepth - 0.003) > percentageCloserFilterDepth ? 1.0 : 0.0;
+		}
+	}
+	shadow /= 9.0;
+
+	// Allow fragments whose z values exceed the far plane of orthographic frustum to not be in shadow
+	if (currentDepth > 1.0) {
+		shadow = 0.0;
+	}
 
 	return shadow;
 }
