@@ -25,7 +25,9 @@ float calcShadow(vec4 lightSpaceFragPos) {
 	// sample the closest depth value (of some fragment from light's POV)
 	float closestDepth = texture(shadowMap, fragPosNDC.xy).r;
 	float currentDepth = fragPosNDC.z;
-	float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+	vec3 lightDir = normalize(lightPos - fs_in.FragPos);
+	float bias = max(0.005, 0.05* (1.0 - dot(lightDir, fs_in.Normal)));
+	float shadow = currentDepth - 0.0009 > closestDepth ? 1.0 : 0.0;
 
 	return shadow;
 }

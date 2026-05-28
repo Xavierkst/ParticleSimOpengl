@@ -19,7 +19,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 unsigned int LoadTexture(const char* fPath);
 unsigned int LoadCubemap(std::vector<std::string>& faces);
-void renderScene(Shader shader);
+void renderScene(Shader shader, bool cullFront);
 void renderQuad();
 void renderCube();
 
@@ -283,7 +283,8 @@ int main() {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, woodTex);
 		// render scene
-		renderScene(shadowMapShader);
+		renderScene(shadowMapShader, /*cullFront*/true);
+		glCullFace(GL_BACK);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, SCR_WIDTH, SCR_HT);
@@ -304,7 +305,7 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, woodTex);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-		renderScene(bpShadowShader);
+		renderScene(bpShadowShader, /*cullFront*/false);
 
 		// switch to default framebuffer and render depth map onto it
 		// glDisable(GL_DEPTH_TEST);
@@ -518,13 +519,18 @@ void renderQuad() {
 	glBindVertexArray(0);
 }
 
-void renderScene(const Shader shader) {
+void renderScene(const Shader shader, bool cullFront) {
 	// floor
 	glm::mat4 model(1.0f);
 	// model = glm::rotate(model, glm::radians(15.0f), glm::normalize(glm::vec3(0.0, 1.0, 1.0)));
 	shader.setMat4("model", model);
 	glBindVertexArray(planeVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	if (cullFront) {
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+	}
 
 	// cubes
 	model = glm::mat4(1.0f);
@@ -545,6 +551,10 @@ void renderScene(const Shader shader) {
 	model = glm::scale(model, glm::vec3(0.25));
 	shader.setMat4("model", model);
 	renderCube();
+	if (cullFront) {
+		glCullFace(GL_BACK);
+		glDisable(GL_CULL_FACE);
+	}
 }
 
 // when window dimension is altered by the user, gl should immediately
