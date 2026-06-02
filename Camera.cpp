@@ -60,6 +60,7 @@ void Camera::ProcessMouseMovement(const float dx, const float dy, const GLboolea
 			pitch = -89.0f;
 		}
 	}
+
 	updateCameraVectors();
 }
 

@@ -32,7 +32,7 @@ float calcShadow(vec4 lightSpaceFragPos) {
 	for (int x = -1; x <= 1; ++x) {
 		for (int y = -1; y <= 1; ++y) {
 			float percentageCloserFilterDepth = texture(shadowMap, fragPosNDC.xy + texelSize * vec2(x,y)).r;
-			shadow += (currentDepth - 0.003) > percentageCloserFilterDepth ? 1.0 : 0.0;
+			shadow += (currentDepth - 0.006) > percentageCloserFilterDepth ? 1.0 : 0.0;
 		}
 	}
 	shadow /= 9.0;
@@ -58,8 +58,9 @@ void main() {
 	// specular
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 halfVec = normalize(viewDir + lightDir);
-	float spec = pow(max(dot(halfVec, normal), 0.0), 64.0);
+	float spec = pow(max(dot(halfVec, normal), 0.0), 128.0);
 	vec3 specular = spec * lightColor;
+	// vec3 specular = vec3(0.0f);
 
 	float shadow = calcShadow(fs_in.lightSpaceFragPos);
 	vec3 result = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;

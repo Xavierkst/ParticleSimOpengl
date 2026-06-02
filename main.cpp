@@ -25,8 +25,6 @@ void renderCube();
 
 void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam);
 
-
-
 // Values / Settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HT = 600;
@@ -35,6 +33,8 @@ const unsigned int SHADOW_WIDTH = 1024;
 const unsigned int SHADOW_HT = 1024;
 
 Camera camActor;
+Camera lightActor(glm::vec3 (-2.0, 4.0, -1.0f), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float lastX = (float)SCR_WIDTH / 2.0;
@@ -224,10 +224,27 @@ int main() {
 	blinnPhongShader.setVec3("pointLights[0].specular", glm::vec3(0.3f));
 	blinnPhongShader.setInt("mat.texture_diffuse0", 0);
 
+	// mini shadow map fbo and depth attachment
+	unsigned int msfbo, mdepthMap;
+	glGenFramebuffers(1, &msfbo);
+	glGenTextures(1, &mdepthMap);
+	glBindTexture(GL_TEXTURE_2D, mdepthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, msfbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mdepthMap, 0);
+	// specify that this fbo doesn't hold or write to a color attachment
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	// shadow map fbo and depth attachment
 	unsigned int sfbo, depthMap;
 	glGenFramebuffers(1, &sfbo);
-	
 	glGenTextures(1, &depthMap);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
@@ -250,9 +267,7 @@ int main() {
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
 	glm::vec3 lightPos(-2.0, 4.0, -1.0f);
-
-	glEnable(GL_DEPTH_TEST);
-
+	
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
@@ -268,34 +283,39 @@ int main() {
 		// clear default frame buffer depth and colors
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
 
-		// glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glm::mat4 lightView(glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0)));
-		// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(lightView));
 		float nearPlane = 1.0f, farPlane = 7.5f;
+		glm::mat4 lightView = lightActor.getViewMatrix();
 		glm::mat4 lightProj(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane));
 		glm::mat4 lightTransform = lightProj * lightView;
-		// glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(lightProj));
-		// glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		shadowMapShader.use();
-		shadowMapShader.setMat4("model", glm::mat4(1.0f));
-		shadowMapShader.setMat4("lightTransform", lightTransform);
+		glm::mat4 model(1.0f);
 
+		shadowMapShader.use();
+		shadowMapShader.setMat4("model", model);
+		shadowMapShader.setMat4("lightTransform", lightTransform);
+		glBindFramebuffer(GL_FRAMEBUFFER, msfbo);
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, woodTex);
+		renderScene(shadowMapShader, /*cullBack*/false);
+
+		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+		lightTransform = lightProj * lightView;
+		shadowMapShader.setMat4("lightTransform", lightTransform);
 		glBindFramebuffer(GL_FRAMEBUFFER, sfbo);
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, woodTex);
-		// render scene
-		renderScene(shadowMapShader, /*cullFront*/true);
-		glCullFace(GL_BACK);
+		renderScene(shadowMapShader, /*cullBack*/true);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, SCR_WIDTH, SCR_HT);
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glm::mat4 model(1.0f);
 		bpShadowShader.use();
 		bpShadowShader.setMat4("model", model);
 		bpShadowShader.setMat4("view", camActor.getViewMatrix());
@@ -309,17 +329,16 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, woodTex);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-		renderScene(bpShadowShader, /*cullFront*/false);
+		renderScene(bpShadowShader, /*cullBack*/false);
 
 		// switch to default framebuffer and render depth map onto it
-		// glDisable(GL_DEPTH_TEST);
-
-		// screenShader.use();
-		// screenShader.setFloat("near_plane", nearPlane);
-		// screenShader.setFloat("far_plane", farPlane);
-		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, depthMap);
-		// renderQuad();
+		glDisable(GL_DEPTH_TEST);
+		screenShader.use();
+		screenShader.setFloat("near_plane", nearPlane);
+		screenShader.setFloat("far_plane", farPlane);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, mdepthMap);
+		renderQuad();
 	
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -360,6 +379,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	lastY = ypos;
 
 	camActor.ProcessMouseMovement(xOffset, yOffset);
+	lightActor.ProcessMouseMovement(xOffset, yOffset);
 }
 
 void bindArrBuffer(unsigned int& VAO, unsigned int& VBO, int* vertices) {
@@ -501,11 +521,13 @@ unsigned int quadVAO=0, quadVBO=0;
 void renderQuad() {
 	if (quadVAO == 0) {
 		float quadVertices[] = {
-			// positions        // texture Coords
-			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+			// positions        // texCoords
+			 0.75f,  1.0f, 0.0f, 0.0f, 1.0f,
+			 0.75f,  0.7f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  0.7f, 0.0f, 1.0f, 0.0f,
+			 0.75f,  1.0f, 0.0f, 0.0f, 1.0f,
+			 1.0f,  0.7f,  0.0f, 1.0f, 0.0f,
+			 1.0f,  1.0f,  0.0f, 1.0f, 1.0f
 		};
 		glGenVertexArrays(1, &quadVAO);
 		glGenBuffers(1, &quadVBO);
@@ -519,11 +541,11 @@ void renderQuad() {
 	}
 	// render quad:
 	glBindVertexArray(quadVAO);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
 }
 
-void renderScene(const Shader shader, bool cullFront) {
+void renderScene(const Shader shader, bool cullBack) {
 	// floor
 	glm::mat4 model(1.0f);
 	// model = glm::rotate(model, glm::radians(15.0f), glm::normalize(glm::vec3(0.0, 1.0, 1.0)));
@@ -531,7 +553,7 @@ void renderScene(const Shader shader, bool cullFront) {
 	glBindVertexArray(planeVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
-	if (cullFront) {
+	if (cullBack) {
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_FRONT);
 	}
@@ -555,7 +577,7 @@ void renderScene(const Shader shader, bool cullFront) {
 	model = glm::scale(model, glm::vec3(0.25));
 	shader.setMat4("model", model);
 	renderCube();
-	if (cullFront) {
+	if (cullBack) {
 		glCullFace(GL_BACK);
 		glDisable(GL_CULL_FACE);
 	}
