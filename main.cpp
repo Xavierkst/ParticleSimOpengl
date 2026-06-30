@@ -105,7 +105,6 @@ int main() {
          25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
     };
 
-
 	struct Matrices {
 		glm::mat4 view;
 		glm::mat4 proj;
@@ -224,6 +223,21 @@ int main() {
 	blinnPhongShader.setVec3("pointLights[0].specular", glm::vec3(0.3f));
 	blinnPhongShader.setInt("mat.texture_diffuse0", 0);
 
+	// COMPUTE SHADER result -- Create image object (as a texture)
+	unsigned int compShaderTexture;
+	unsigned int TEXTURE_WIDTH = 512, TEXTURE_HEIGHT = 512;
+	glGenTextures(1, &compShaderTexture);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, compShaderTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+	glBindImageTexture(0, compShaderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F); // bind 32f texture to tex ID
+
+	Shader compShader("compShader.comp"); // Cr8 shader program and attach shader ID to it
+
 	// mini shadow map fbo and depth attachment
 	unsigned int msfbo, mdepthMap;
 	glGenFramebuffers(1, &msfbo);
@@ -282,7 +296,6 @@ int main() {
 
 		// clear default frame buffer depth and colors
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
 		float nearPlane = 1.0f, farPlane = 7.5f;
@@ -291,53 +304,65 @@ int main() {
 		glm::mat4 lightTransform = lightProj * lightView;
 		glm::mat4 model(1.0f);
 
-		shadowMapShader.use();
-		shadowMapShader.setMat4("model", model);
-		shadowMapShader.setMat4("lightTransform", lightTransform);
-		glBindFramebuffer(GL_FRAMEBUFFER, msfbo);
-		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HT);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, woodTex);
-		renderScene(shadowMapShader, /*cullBack*/false);
+		// shadowMapShader.use();
+		// shadowMapShader.setMat4("model", model);
+		// shadowMapShader.setMat4("lightTransform", lightTransform);
+		// glBindFramebuffer(GL_FRAMEBUFFER, msfbo);
+		// glViewport(0, 0, SHADOW_WIDTH, SHADOW_HT);
+		// glClear(GL_DEPTH_BUFFER_BIT);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, woodTex);
+		// renderScene(shadowMapShader, /*cullBack*/false);
 
-		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-		lightTransform = lightProj * lightView;
-		shadowMapShader.setMat4("lightTransform", lightTransform);
-		glBindFramebuffer(GL_FRAMEBUFFER, sfbo);
-		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HT);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, woodTex);
-		renderScene(shadowMapShader, /*cullBack*/true);
+		// lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+		// lightTransform = lightProj * lightView;
+		// shadowMapShader.setMat4("lightTransform", lightTransform);
+		// glBindFramebuffer(GL_FRAMEBUFFER, sfbo);
+		// glViewport(0, 0, SHADOW_WIDTH, SHADOW_HT);
+		// glClear(GL_DEPTH_BUFFER_BIT);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, woodTex);
+		// renderScene(shadowMapShader, /*cullBack*/true);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, SCR_WIDTH, SCR_HT);
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// glViewport(0, 0, SCR_WIDTH, SCR_HT);
+		// glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// bpShadowShader.use();
+		// bpShadowShader.setMat4("model", model);
+		// bpShadowShader.setMat4("view", camActor.getViewMatrix());
+		// bpShadowShader.setMat4("proj", mat1.proj);
+		// bpShadowShader.setMat4("lightTransform", lightTransform);
+		// bpShadowShader.setVec3("viewPos", camActor.getPos());
+		// bpShadowShader.setVec3("lightPos", lightPos);
+		// bpShadowShader.setInt("diffuseTexture", 0);
+		// bpShadowShader.setInt("shadowMap", 1);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, woodTex);
+		// glActiveTexture(GL_TEXTURE1);
+		// glBindTexture(GL_TEXTURE_2D, depthMap);
+		// renderScene(bpShadowShader, /*cullBack*/false);
+	
+		// Render a texture buffer with same dimensions as screen and then 
+		// pass that in as the texture for the quad
+		compShader.use();
+		// run compute shader, and set bit barrier so that the texture cannot be 
+		// read from until compute shader is done writing to it --i.e. host program 
+		// gets halted.
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, compShaderTexture);
+		glDispatchCompute((unsigned int) TEXTURE_WIDTH, (unsigned int) TEXTURE_HEIGHT, 1); 
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+				
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		bpShadowShader.use();
-		bpShadowShader.setMat4("model", model);
-		bpShadowShader.setMat4("view", camActor.getViewMatrix());
-		bpShadowShader.setMat4("proj", mat1.proj);
-		bpShadowShader.setMat4("lightTransform", lightTransform);
-		bpShadowShader.setVec3("viewPos", camActor.getPos());
-		bpShadowShader.setVec3("lightPos", lightPos);
-		bpShadowShader.setInt("diffuseTexture", 0);
-		bpShadowShader.setInt("shadowMap", 1);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, woodTex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
-		renderScene(bpShadowShader, /*cullBack*/false);
-
 		// switch to default framebuffer and render depth map onto it
 		glDisable(GL_DEPTH_TEST);
 		screenShader.use();
+		screenShader.setInt("quadTex", 0);
 		screenShader.setFloat("near_plane", nearPlane);
 		screenShader.setFloat("far_plane", farPlane);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, mdepthMap);
+		// glBindTexture(GL_TEXTURE_2D, mdepthMap);
 		renderQuad();
 	
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -350,6 +375,8 @@ int main() {
     // ------------------------------------------------------------------------
 	glDeleteFramebuffers(1, &fbo);
 	glDeleteFramebuffers(1, &interFBO);
+	glDeleteProgram(screenShader.ID);
+	glDeleteProgram(compShader.ID);
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
@@ -522,12 +549,17 @@ void renderQuad() {
 	if (quadVAO == 0) {
 		float quadVertices[] = {
 			// positions        // texCoords
-			 0.75f,  1.0f, 0.0f, 0.0f, 1.0f,
-			 0.75f,  0.7f, 0.0f, 0.0f, 0.0f,
-			 1.0f,  0.7f, 0.0f, 1.0f, 0.0f,
-			 0.75f,  1.0f, 0.0f, 0.0f, 1.0f,
-			 1.0f,  0.7f,  0.0f, 1.0f, 0.0f,
-			 1.0f,  1.0f,  0.0f, 1.0f, 1.0f
+			 // 0.75f,  1.0f, 0.0f, 0.0f, 1.0f,
+			 // 0.75f,  0.7f, 0.0f, 0.0f, 0.0f,
+			 // 1.0f,  0.7f, 0.0f, 1.0f, 0.0f,
+			 // 0.75f,  1.0f, 0.0f, 0.0f, 1.0f,
+			 // 1.0f,  0.7f,  0.0f, 1.0f, 0.0f,
+			 // 1.0f,  1.0f,  0.0f, 1.0f, 1.0f
+			 // positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
 		};
 		glGenVertexArrays(1, &quadVAO);
 		glGenBuffers(1, &quadVBO);
@@ -541,7 +573,7 @@ void renderQuad() {
 	}
 	// render quad:
 	glBindVertexArray(quadVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
 }
 

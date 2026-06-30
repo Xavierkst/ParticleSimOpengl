@@ -1,6 +1,47 @@
 #include "Shader.h"
 #include <glad/glad.h>
 
+Shader::Shader(const char* cShaderPath)
+{
+	std::string cShaderCode; 
+	std::ifstream cShaderFile;
+	cShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+	try {
+		cShaderFile.open(cShaderPath);
+		std::stringstream cShaderStream;
+		cShaderStream << cShaderFile.rdbuf();
+		cShaderFile.close();
+		cShaderCode = cShaderStream.str();
+	} catch (std::ifstream::failure& e) {
+		std::cout << "ERROR::COMPUTE_SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+	}
+	unsigned int compute;
+	const char* cShaderCode1 = cShaderCode.c_str();
+	int success;
+	char infoLog[512];
+	compute = glCreateShader(GL_COMPUTE_SHADER);
+	glShaderSource(compute, 1, &cShaderCode1, NULL);
+	glCompileShader(compute);
+	glGetShaderiv(compute, GL_COMPILE_STATUS, &success);
+
+	if (!success) {
+		glGetShaderInfoLog(compute, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+
+	this->ID = glCreateProgram();
+	glAttachShader(this->ID, compute);
+	glLinkProgram(this->ID);
+	glGetProgramiv(this->ID, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(this->ID, 512, NULL, infoLog);
+		std::cout << "ERROR::COMPUTE_SHADER::PROGRAM:: LINKING_FAILED\n" << infoLog << std::endl;
+	}
+	
+	glDeleteShader(compute);
+}
+
 Shader::Shader(const char* vShaderPath, const char* fShaderPath, const char* gShaderPath) {
 	std::string vShaderCode, fShaderCode, gShaderCode;
 	std::ifstream vShaderFile, fShaderFile, gShaderFile;

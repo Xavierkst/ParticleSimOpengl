@@ -12,6 +12,9 @@
 class Shader {
 public:
 	unsigned int ID;
+    // For compute shader
+    Shader(const char* cShaderPath);
+    // For regular (vert & frag shader program)
     Shader(const char* vShaderPath, const char* fShaderPath, const char* gShaderPath = nullptr);
 
     void use() const;

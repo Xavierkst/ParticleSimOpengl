@@ -43,6 +43,7 @@ void main() {
     // }
 
     // // FragColor = vec4(res, 1.0);
-    float fragDepth = texture(quadTex, texCoords).r;
-	FragColor = vec4(vec3(fragDepth), 1.0f);
+    // float fragDepth = texture(quadTex, texCoords).r;
+    vec3 texColor = texture(quadTex, texCoords).rgb;
+	FragColor = vec4(texColor, 1.0f);
 }
