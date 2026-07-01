@@ -35,6 +35,7 @@ const unsigned int SHADOW_HT = 1024;
 Camera camActor;
 Camera lightActor(glm::vec3 (-2.0, 4.0, -1.0f), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
 
+int fCounter = 0;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float lastX = (float)SCR_WIDTH / 2.0;
@@ -66,6 +67,7 @@ int main() {
 	glfwMakeContextCurrent(window);
 	// Set callback for when gl window resizes
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSwapInterval(0); // To exceed glfw's framerate cap of 60
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
@@ -225,7 +227,7 @@ int main() {
 
 	// COMPUTE SHADER result -- Create image object (as a texture)
 	unsigned int compShaderTexture;
-	unsigned int TEXTURE_WIDTH = 512, TEXTURE_HEIGHT = 512;
+	unsigned int TEXTURE_WIDTH = 1000, TEXTURE_HEIGHT = 1000;
 	glGenTextures(1, &compShaderTexture);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, compShaderTexture);
@@ -287,6 +289,13 @@ int main() {
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		if (fCounter < 500) {
+			fCounter++;
+		} else {
+			std::cout << "FPS: " << 1 / deltaTime << std::endl;
+			fCounter = 0;
+		}
+		
 		// Process key/mouse input
 		inputHandler.processInput(window, cmds, &blinnPhongShader);
 		for (auto& cmd : cmds) {
@@ -303,6 +312,29 @@ int main() {
 		glm::mat4 lightProj(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane));
 		glm::mat4 lightTransform = lightProj * lightView;
 		glm::mat4 model(1.0f);
+
+		// Render a texture buffer with same dimensions as screen and then 
+		// pass that in as the texture for the quad
+	
+		compShader.use();
+		compShader.setFloat("t", currentFrame);
+		// run compute shader, and set bit barrier so that the texture cannot be 
+		// read from until compute shader is done writing to it --i.e. host program 
+		// gets halted.
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, compShaderTexture);
+		glDispatchCompute((unsigned int) TEXTURE_WIDTH/10, (unsigned int) TEXTURE_HEIGHT/10, 1); 
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+				
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// switch to default framebuffer and render depth map onto it
+		glDisable(GL_DEPTH_TEST);
+		screenShader.use();
+		screenShader.setInt("quadTex", 0);
+		screenShader.setFloat("near_plane", nearPlane);
+		screenShader.setFloat("far_plane", farPlane);
+		// glBindTexture(GL_TEXTURE_2D, mdepthMap);
+		renderQuad();
 
 		// shadowMapShader.use();
 		// shadowMapShader.setMat4("model", model);
@@ -343,27 +375,6 @@ int main() {
 		// glActiveTexture(GL_TEXTURE1);
 		// glBindTexture(GL_TEXTURE_2D, depthMap);
 		// renderScene(bpShadowShader, /*cullBack*/false);
-	
-		// Render a texture buffer with same dimensions as screen and then 
-		// pass that in as the texture for the quad
-		compShader.use();
-		// run compute shader, and set bit barrier so that the texture cannot be 
-		// read from until compute shader is done writing to it --i.e. host program 
-		// gets halted.
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, compShaderTexture);
-		glDispatchCompute((unsigned int) TEXTURE_WIDTH, (unsigned int) TEXTURE_HEIGHT, 1); 
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-				
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		// switch to default framebuffer and render depth map onto it
-		glDisable(GL_DEPTH_TEST);
-		screenShader.use();
-		screenShader.setInt("quadTex", 0);
-		screenShader.setFloat("near_plane", nearPlane);
-		screenShader.setFloat("far_plane", farPlane);
-		// glBindTexture(GL_TEXTURE_2D, mdepthMap);
-		renderQuad();
 	
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
