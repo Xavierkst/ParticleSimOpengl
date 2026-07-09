@@ -10,7 +10,7 @@
 class Technique {
 public:
 	Technique();
-	~Technique();
+	virtual ~Technique();
 	virtual bool Init();
 	bool AddShader(GLenum ShaderType, const char* vShaderPath = nullptr, const char* fShaderPath = nullptr, const char* shaderPath3 = nullptr);
 	bool Finalize();

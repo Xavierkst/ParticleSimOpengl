@@ -18,6 +18,7 @@ bool Technique::Init() {
 	// if (m_shaderProg) {
 	// 	glDeleteProgram(m_shaderProg);
 	// }
+	return true;
 }
 
 void Technique::Enable() {
