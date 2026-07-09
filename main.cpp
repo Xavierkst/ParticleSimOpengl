@@ -1,12 +1,12 @@
+#include <string>
 #include <map>
+#include <memory>
+#include <algorithm>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "Point.h"
-#include <memory>
-#include <algorithm>
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <string>
 
 #include "Shader.h"
 #include "Camera.h"
@@ -87,14 +87,6 @@ int main() {
 		glDebugMessageCallback(glDebugOutput, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 	}
-
-	// GLint profileMask;
-	// glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &profileMask);
-	// if (profileMask & GL_CONTEXT_CORE_PROFILE_BIT) {
-	// 	std::cout << "You are using the Core Profile" << std::endl;
-	// } else if (profileMask & GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) {
-	// 	std::cout << "You are using the Compatibility Profile" << std::endl;
-	// }
 
 	float planeVertices[] = {
 		// positions            // normals         // texcoords
