@@ -6,7 +6,7 @@
 class ParticlesTechnique : public Technique {
 public:
 	ParticlesTechnique();
-	bool SetBlackHoles(const glm::vec3& pos1, const glm::vec3& pos2);
+	void SetBlackHoles(const glm::vec3& pos1, const glm::vec3& pos2);
 	bool Init();
 
 private:
