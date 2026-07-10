@@ -7,11 +7,11 @@ class ParticlesTechnique : public Technique {
 public:
 	ParticlesTechnique();
 	bool SetBlackHoles(const glm::vec3& pos1, const glm::vec3& pos2);
-	virtual bool Init();
+	bool Init();
 
 private:
-	GLuint m_blackHoleLoc1;
-	GLuint m_blackHoleLoc2;
+	GLuint m_blackHole1Loc = INVALID_UNIFORM_LOC;
+	GLuint m_blackHole2Loc = INVALID_UNIFORM_LOC;
 };
 
 #endif // PARTICLES_TECHNIQUE_H
