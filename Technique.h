@@ -7,22 +7,24 @@
 #include <glad/glad.h>
 #include "Shader.h"
 
+#define INVALID_UNIFORM_LOC -1
+
 class Technique {
 public:
 	Technique();
 	virtual ~Technique();
-	virtual bool Init();
-	bool AddShader(GLenum ShaderType, const char* vShaderPath = nullptr, const char* fShaderPath = nullptr, const char* shaderPath3 = nullptr);
-	bool Finalize();
 	void Enable();
-	GLint GetUniformLocation(const char* pUniformName);
+	GLuint GetProgram();
 
+protected:
+	bool AddShader(GLenum ShaderType, const char* shaderPath1, const char* shaderPath2 = nullptr, const char* shaderPath3 = nullptr);
+	GLint GetUniformLocation(const char* pUniformName);
 	GLuint m_shaderProg = 0;
 
 private:
 	using ShaderObjList = std::list<std::shared_ptr<Shader>>;
-	ShaderObjList m_shaderList;
-
+	// holds ptr to all Shader programs -- At this pt, should expect 1 per Technique
+	ShaderObjList m_shaderList; 
 	void PrintUniformList();
 };
 
