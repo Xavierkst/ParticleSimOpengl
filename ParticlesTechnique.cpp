@@ -16,7 +16,7 @@ bool ParticlesTechnique::Init() {
 	return true;
 }
 
-bool ParticlesTechnique::SetBlackHoles(const glm::vec3& pos1, const glm::vec3& pos2) {
+void ParticlesTechnique::SetBlackHoles(const glm::vec3& pos1, const glm::vec3& pos2) {
 	glUniform3f(m_blackHole1Loc, pos1.x, pos1.y, pos1.z);
 	glUniform3f(m_blackHole2Loc, pos2.x, pos2.y, pos2.z);
 }

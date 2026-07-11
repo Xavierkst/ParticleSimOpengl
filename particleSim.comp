@@ -1,0 +1,21 @@
+#version 450 core
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+
+
+const float particleMass = 0.1f;
+const float particleInverseMass = 1.0f / particleMass;
+const float deltaT = 0.0005f;
+
+layout (std430, binding = 0) buffer Pos {
+	vec4 Position[];
+};
+
+layout (std430, binding = 1) buffer Velo {
+	vec4 Velocity[];
+};
+
+void main() {
+	
+}
