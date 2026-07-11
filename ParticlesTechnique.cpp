@@ -4,7 +4,7 @@ ParticlesTechnique::ParticlesTechnique() {
 }
 
 bool ParticlesTechnique::Init() {
-	const char* placeHolderShaderPath = nullptr;
+	const char* placeHolderShaderPath = "particleSim.comp";
 	if (!AddShader(GL_COMPUTE_SHADER, placeHolderShaderPath)) {
 		return false;
 	}

@@ -14,8 +14,8 @@ void ColorTechnique::setColor(const glm::vec4& c)
 }
 
 bool ColorTechnique::Init() {
-	const char* placeHolderVShader = nullptr; 
-	const char* placeHolderFShader = nullptr;
+	const char* placeHolderVShader = "particleSim.vert";
+	const char* placeHolderFShader = "particleSim.frag";
 
 	// Create shader prog + compile, and link vert and frag shader 
 	if (!AddShader(GL_VERTEX_SHADER, placeHolderVShader, placeHolderFShader)) {

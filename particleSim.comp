@@ -12,8 +12,8 @@ uniform vec3 BHPos2 = vec3(-5.0, .0, .0);
 uniform float BH1Gravity = 1000.0;
 uniform float BH2Gravity = 1000.0;
 
+// How much the particles can 'stray' from the origin before position gets reset
 uniform float maxDist = 45.0f;
-
 
 layout (std430, binding = 0) buffer Pos {
 	vec4 Position[];
