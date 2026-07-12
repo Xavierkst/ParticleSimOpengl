@@ -52,8 +52,8 @@ bool Technique::AddShader(GLenum shaderType, const char* shaderPath1, const char
 
 	// vert + frag + (maybe) geom shader:
 	const char* vShaderPath = shaderPath1;
-	const char* fShaderPath = shaderPath1;
-	const char* gShaderPath = shaderPath1;
+	const char* fShaderPath = shaderPath2;
+	const char* gShaderPath = shaderPath3;
 	shader = std::make_shared<Shader>(vShaderPath, fShaderPath, gShaderPath);
 
 	if (!shader) {

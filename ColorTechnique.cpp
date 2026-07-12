@@ -19,6 +19,7 @@ bool ColorTechnique::Init() {
 
 	// Create shader prog + compile, and link vert and frag shader 
 	if (!AddShader(GL_VERTEX_SHADER, placeHolderVShader, placeHolderFShader)) {
+		std::cout << "Color Technique Shader failed to get added!" << std::endl;
 		return false;
 	}
 	

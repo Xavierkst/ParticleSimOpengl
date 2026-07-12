@@ -6,6 +6,7 @@ ParticlesTechnique::ParticlesTechnique() {
 bool ParticlesTechnique::Init() {
 	const char* placeHolderShaderPath = "particleSim.comp";
 	if (!AddShader(GL_COMPUTE_SHADER, placeHolderShaderPath)) {
+		std::cout << "Particle Technique Shader failed to get added!" << std::endl;
 		return false;
 	}
 

@@ -3,11 +3,11 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 Particles::Particles() {
-	m_numParticlesX = 100;
-	m_numParticlesY = 100;
-	m_numParticlesZ = 100;
+	m_numParticlesX = 10;
+	m_numParticlesY = 10;
+	m_numParticlesZ = 10;
 	
-	m_speed = 35.0f;
+	m_speed = 30.0f;
 	m_angle = 0.0f;
 
 	m_bhPos1 = glm::vec4(5.0, .0, .0, 1.0);
@@ -49,14 +49,16 @@ void Particles::InitBuffers() {
 	GLuint bufferSize = positions.size() * sizeof(positions[0]);
 
 	glCreateBuffers(1, &m_posBuf);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_posBuf); // positions are binded to binding pt 0
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_posBuf);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, positions.data(), GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_posBuf); // positions are binded to binding pt 0
 	
+	// We're not rendering with this buffer
 	std::vector<glm::vec4> velocities(positions.size(), glm::vec4(0.0));
 	glCreateBuffers(1, &m_veloBuf);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_veloBuf); // velos are binded to binding pt 1
-	// We're not rendering with this buffer
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_veloBuf);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, velocities.data(), GL_DYNAMIC_COPY);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_veloBuf); // velos are binded to binding pt 1
 	
 	// VAO for drawing particles
 	glGenVertexArrays(1, &m_VAO);
@@ -96,8 +98,8 @@ void Particles::ComputePositions(std::vector<glm::vec4>& positions)
 	// start off all particles evenly spaced in a cube shape
 	int particleIdx = 0;
 	for (int x = 0; x < m_numParticlesX; ++x) {
-		for (int y = 0; y < m_numParticlesX; ++y) {
-			for (int z = 0; z < m_numParticlesX; ++z) {
+		for (int y = 0; y < m_numParticlesY; ++y) {
+			for (int z = 0; z < m_numParticlesZ; ++z) {
 				glm::vec4& particle = positions[particleIdx];
 				particle.x = dx * x;
 				particle.y = dy * y;

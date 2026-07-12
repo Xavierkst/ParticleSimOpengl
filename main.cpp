@@ -196,10 +196,20 @@ int main() {
 	glBindTexture(GL_TEXTURE_2D, interTex);
 	// This color buffer remains empty for now --hence NULL
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// bind the tex ID to the framebuffer as a color attachment
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, interTex, 0);
+
+	unsigned int interRBO;
+	glGenRenderbuffers(1, &interRBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, interRBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HT);
+	// attach this renderbuffer obj to framebuffer obj
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, interRBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
@@ -276,6 +286,7 @@ int main() {
 	// store button commands, process them, and clear out at the end of the frame
 	std::vector<Command*> cmds;
 	glm::vec3 lightPos(-2.0, 4.0, -1.0f);
+	Particles particles;
 	
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -298,9 +309,10 @@ int main() {
 		
 		// this FBO has color, stencil, and depth attachment--render to texture then 
 		// render texture onto quad as final step
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		// glBindFramebuffer(GL_FRAMEBUFFER, interFBO);
 		// clear default frame buffer depth and colors
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
 		float nearPlane = 1.0f, farPlane = 7.5f;
@@ -312,13 +324,12 @@ int main() {
 		glm::mat4 viewMat = camActor.getViewMatrix();
 		glm::mat4 projMat = glm::perspective(camActor.getFov(), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
 
-		Particles particles;
 		particles.Init();
 		glActiveTexture(GL_TEXTURE0);
 		// Bind a texture you created with the dimensions of the your viewport. 
 		// In the render pass, your frag shader will 
-		particles.Render(projMat * viewMat);
 		particles.Update(deltaTime);
+		particles.Render(projMat * viewMat);
 		// Render a texture buffer with same dimensions as screen and then 
 		// pass that in as the texture for the quad
 	
@@ -327,21 +338,22 @@ int main() {
 		// run compute shader, and set bit barrier so that the texture cannot be 
 		// read from until compute shader is done writing to it --i.e. host program 
 		// gets halted.
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		// glBindTexture(GL_TEXTURE_2D, compShaderTexture);
 		// glDispatchCompute((unsigned int) TEXTURE_WIDTH/10, (unsigned int) TEXTURE_HEIGHT/10, 1); 
 		// glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		// switch to default framebuffer and render depth map onto it
-		glDisable(GL_DEPTH_TEST);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, fbTex);
-		screenShader.use();
-		screenShader.setInt("quadTex", 0);
-		screenShader.setFloat("near_plane", nearPlane);
-		screenShader.setFloat("far_plane", farPlane);
-		
-		renderQuad();
+		// glDisable(GL_DEPTH_TEST);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, interTex);
+		// screenShader.use();
+		// screenShader.setInt("quadTex", 0);
+		// screenShader.setFloat("near_plane", nearPlane);
+		// screenShader.setFloat("far_plane", farPlane);
+		// 
+		// renderQuad();
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
