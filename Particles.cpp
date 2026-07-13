@@ -26,7 +26,11 @@ void Particles::Init() {
 }
 // Updates all the current rotation angle in delta T increments
 void Particles::Update(float dt)
-{
+{	
+	if (m_pause) {
+		return;
+	}
+
 	m_angle += dt * m_speed;
 	if (m_angle > 360.0f) {
 		m_angle -= 360.0f;
@@ -152,4 +156,10 @@ void Particles::ExecuteComputeShader(const glm::vec3& blkHolePos1, const glm::ve
 	glDispatchCompute(m_totNumParticles, 1, 1);
 	// do not continue with reading from the buffer until the GPU is done writing(?)
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); 
+}
+
+void Particles::togglePause(const bool pause) {
+	m_pause = pause;
+	m_particleTech.Enable();
+	m_particleTech.SetPauseSim(m_pause);
 }

@@ -1,6 +1,6 @@
 #version 450 core
 
-layout (local_size_x = 1) in;
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 const float particleMass = 0.1f;
 const float particleInverseMass = 1.0f / particleMass;
@@ -8,12 +8,13 @@ uniform float deltaT = 0.0002f;
 
 uniform vec3 BHPos1 = vec3(5.0, .0, .0);
 uniform vec3 BHPos2 = vec3(-5.0, .0, .0);
+uniform bool isPaused = false;
 
 uniform float BH1Gravity = 1000.0;
 uniform float BH2Gravity = 1000.0;
 
 // How much the particles can 'stray' from the origin before position gets reset
-uniform float maxDist = 45.0f;
+uniform float maxDist = 300.0f;
 
 layout (std430, binding = 0) buffer Pos {
 	vec4 Position[];
@@ -36,6 +37,13 @@ void main() {
 	force += (BH2Gravity / (dist + softening)) * normalize(d);
 
 	vec3 accel = force * particleInverseMass;
-	Position[particleIdx] = vec4(pPos + Velocity[particleIdx].xyz * deltaT + (0.5 * accel * deltaT * deltaT), 1.0f);
-	Velocity[particleIdx] = vec4(Velocity[particleIdx].xyz + accel * deltaT, 0.0f);
+
+	// Reset all particles that stray too far back to world origin
+	if (dist >= maxDist) {
+		pPos = vec3(.0, .0, .0);
+	}
+	if (!isPaused) {
+		Position[particleIdx] = vec4(pPos + Velocity[particleIdx].xyz * deltaT + (0.5 * accel * deltaT * deltaT), 1.0f);
+		Velocity[particleIdx] = vec4(Velocity[particleIdx].xyz + accel * deltaT, 0.0f);
+	}
 }

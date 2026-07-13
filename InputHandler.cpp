@@ -16,7 +16,7 @@ InputHandler::InputHandler(GLFWwindow* win) {
 	blinn = false;
 }
 
-void InputHandler::processInput(GLFWwindow* window, std::vector<Command*>& cmds, Shader* shaderProg) {
+void InputHandler::processInput(GLFWwindow* window, std::vector<Command*>& cmds, Particles& particles, Shader* shaderProg) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		cmds.push_back(buttonEsc);
 	}
@@ -73,6 +73,12 @@ void InputHandler::processInput(GLFWwindow* window, std::vector<Command*>& cmds,
 			shaderProg->use();
 			shaderProg->setFloat("mixValue", mixVal);
 		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+		particles.togglePause(true);
+	}
+	if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) {
+		particles.togglePause(false);
 	}
 	// Apply gravity on the player always
 	// cmds.push_back(noButton);

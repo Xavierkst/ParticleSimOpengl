@@ -302,24 +302,15 @@ int main() {
 		}
 		
 		// Process key/mouse input
-		inputHandler.processInput(window, cmds, &blinnPhongShader);
+		inputHandler.processInput(window, cmds, particles, &blinnPhongShader);
 		for (auto& cmd : cmds) {
 			cmd->execute(camActor, deltaTime);
 		}
 		cmds.clear();
-		
-		// this FBO has color, stencil, and depth attachment--render to texture then 
-		// render texture onto quad as final step
-		// glBindFramebuffer(GL_FRAMEBUFFER, interFBO);
-		// clear default frame buffer depth and colors
 		glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
-		// float nearPlane = 1.0f, farPlane = 7.5f;
-		// glm::mat4 lightView = lightActor.getViewMatrix();
-		// glm::mat4 lightProj(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane));
-		// glm::mat4 lightTransform = lightProj * lightView;
 		glm::mat4 model(1.0f);
 		// camActor.getViewMatrix();
 		glm::mat4 viewMat = camActor.getViewMatrix();
@@ -330,31 +321,6 @@ int main() {
 		// In the render pass, your frag shader will 
 		particles.Update(deltaTime);
 		particles.Render(projMat * viewMat);
-		// Render a texture buffer with same dimensions as screen and then 
-		// pass that in as the texture for the quad
-	
-		// compShader.use();
-		// compShader.setFloat("t", currentFrame);
-		// run compute shader, and set bit barrier so that the texture cannot be 
-		// read from until compute shader is done writing to it --i.e. host program 
-		// gets halted.
-		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		// glBindTexture(GL_TEXTURE_2D, compShaderTexture);
-		// glDispatchCompute((unsigned int) TEXTURE_WIDTH/10, (unsigned int) TEXTURE_HEIGHT/10, 1); 
-		// glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// switch to default framebuffer and render depth map onto it
-		// glDisable(GL_DEPTH_TEST);
-		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, interTex);
-		// screenShader.use();
-		// screenShader.setInt("quadTex", 0);
-		// screenShader.setFloat("near_plane", nearPlane);
-		// screenShader.setFloat("far_plane", farPlane);
-		// 
-		// renderQuad();
-
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);

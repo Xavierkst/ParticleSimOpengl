@@ -13,6 +13,7 @@ public:
 	void Init();
 	void Update(float t);
 	void Render(const glm::mat4& viewProj);
+	void togglePause(const bool pause);
 
 private:
 	void InitBuffers();
@@ -28,6 +29,7 @@ private:
 	int m_numParticlesZ = 0;
 	float m_speed = 0.0, m_angle = 0.0;
 	int m_totNumParticles = 0;
+	bool m_pause = false;
 	
 	// Don't need a pos or velo buffer since they live in GPU--just need to initialize it
 	GLuint m_VAO = 0, m_posBuf = 0, m_veloBuf = 0;
