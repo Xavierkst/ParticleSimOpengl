@@ -3,11 +3,11 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 Particles::Particles() {
-	m_numParticlesX = 10;
-	m_numParticlesY = 10;
-	m_numParticlesZ = 10;
+	m_numParticlesX = 100;
+	m_numParticlesY = 100;
+	m_numParticlesZ = 100;
 	
-	m_speed = 30.0f;
+	m_speed = 45.0f;
 	m_angle = 0.0f;
 
 	m_bhPos1 = glm::vec4(5.0, .0, .0, 1.0);

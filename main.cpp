@@ -287,6 +287,7 @@ int main() {
 	std::vector<Command*> cmds;
 	glm::vec3 lightPos(-2.0, 4.0, -1.0f);
 	Particles particles;
+	particles.Init();
 	
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -315,17 +316,16 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
-		float nearPlane = 1.0f, farPlane = 7.5f;
-		glm::mat4 lightView = lightActor.getViewMatrix();
-		glm::mat4 lightProj(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane));
-		glm::mat4 lightTransform = lightProj * lightView;
+		// float nearPlane = 1.0f, farPlane = 7.5f;
+		// glm::mat4 lightView = lightActor.getViewMatrix();
+		// glm::mat4 lightProj(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane));
+		// glm::mat4 lightTransform = lightProj * lightView;
 		glm::mat4 model(1.0f);
 		// camActor.getViewMatrix();
 		glm::mat4 viewMat = camActor.getViewMatrix();
-		glm::mat4 projMat = glm::perspective(camActor.getFov(), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
+		glm::mat4 projMat = glm::perspective(camActor.getFov(), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 1000.0f);
 
-		particles.Init();
-		glActiveTexture(GL_TEXTURE0);
+		// glActiveTexture(GL_TEXTURE0);
 		// Bind a texture you created with the dimensions of the your viewport. 
 		// In the render pass, your frag shader will 
 		particles.Update(deltaTime);

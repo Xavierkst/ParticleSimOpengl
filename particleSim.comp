@@ -4,7 +4,7 @@ layout (local_size_x = 1) in;
 
 const float particleMass = 0.1f;
 const float particleInverseMass = 1.0f / particleMass;
-const float deltaT = 0.0005f;
+uniform float deltaT = 0.0002f;
 
 uniform vec3 BHPos1 = vec3(5.0, .0, .0);
 uniform vec3 BHPos2 = vec3(-5.0, .0, .0);
@@ -29,13 +29,13 @@ void main() {
 	vec3 pPos = Position[particleIdx].xyz;
 	vec3 d = BHPos1 - pPos;
 	float dist = length(d);
-	vec3 force = (BH1Gravity / (dist*dist + softening)) * normalize(d);
+	vec3 force = (BH1Gravity / (dist + softening)) * normalize(d);
 	
 	d = BHPos2 - pPos;
 	dist = length(d);
-	force += (BH2Gravity / (dist*dist + softening)) * normalize(d);
+	force += (BH2Gravity / (dist + softening)) * normalize(d);
 
 	vec3 accel = force * particleInverseMass;
-	Position[particleIdx] = vec4(Position[particleIdx].xyz + Velocity[particleIdx].xyz * deltaT + (0.5 * accel * deltaT * deltaT), 1.0f);
+	Position[particleIdx] = vec4(pPos + Velocity[particleIdx].xyz * deltaT + (0.5 * accel * deltaT * deltaT), 1.0f);
 	Velocity[particleIdx] = vec4(Velocity[particleIdx].xyz + accel * deltaT, 0.0f);
 }
