@@ -1,5 +1,7 @@
-# LearnOpenGL
-Going through the entirety of LearnOpenGL.com in C++ 
+### Simulating 1 million particles using Compute Shaders
+![Geometry Shader model explosion](https://github.com/Xavierkst/OpenglProj/blob/main/textures/Particle_Sim_OpenGL.gif)
+1,000,000 particles with gravitational forces acted on by the 2 red objects orbiting in circular motion. 
+150-200 frame rate achieved.
 
 ### Creating an exploding effect with the geometry shader 
 ![Geometry Shader model explosion](https://github.com/Xavierkst/OpenglProj/blob/main/explodingObjectGeomShader.gif)
@@ -7,6 +9,5 @@ Going through the entirety of LearnOpenGL.com in C++
 ![Geometry Shader model normals displayed](https://github.com/Xavierkst/OpenglProj/blob/main/NormalsGeomShader.png)
 ### Rendering 10,000 asteroids via instanced rendering method
 ![Instanced rendering of 10,000 asteroid rocks](https://github.com/Xavierkst/OpenglProj/blob/main/InstancedRenderAsteroids.png)
-
 ### Rear view mirror effect using frame buffer objects
 
