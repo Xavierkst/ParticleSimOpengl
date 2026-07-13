@@ -1,6 +1,5 @@
 glfw-3.3.8/
-*.sln
-*.vcxproj*
+*.vcxproj.user
 .vs
 glad.c
 x64/
