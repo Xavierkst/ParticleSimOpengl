@@ -72,23 +72,24 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Xavie\Projects\OpenglProj\glfw-3.3.8\ExternalLibs\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Xavie\Projects\OpenglProj\glfw-3.3.8\ExternalLibs\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\glfw-3.3.8\ExternalLibs\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\glfw-3.3.8\ExternalLibs\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\Xavie\Projects\OpenglProj\glfw-3.3.8\ExternalLibs\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Xavie\Projects\OpenglProj\glfw-3.3.8\ExternalLibs\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\glfw-3.3.8\ExternalLibs\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\glfw-3.3.8\ExternalLibs\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Xavie\Projects\OpenglProj\OpenGLProj\Libraries\Include\glm;C:\Users\Xavie\Projects\OpenglProj\OpenGLProj\Libraries\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Xavie\Projects\OpenglProj\OpenGLProj\Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)Libraries\Include\glm;$(ProjectDir)Libraries\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Libraries;$(LibraryPath)</LibraryPath>
+    <AllProjectBMIsArePublic>true</AllProjectBMIsArePublic>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\Xavie\Projects\OpenglProj\glfw-3.3.8\ExternalLibs\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Xavie\Projects\OpenglProj\glfw-3.3.8\ExternalLibs\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\glfw-3.3.8\ExternalLibs\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\glfw-3.3.8\ExternalLibs\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

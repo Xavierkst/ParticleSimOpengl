@@ -322,20 +322,17 @@ int main() {
 		particles.Update(deltaTime);
 		particles.Render(projMat * viewMat);
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
 		glfwPollEvents(); 
 	}
 
     // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
 	glDeleteFramebuffers(1, &fbo);
 	glDeleteFramebuffers(1, &interFBO);
 	glDeleteProgram(screenShader.ID);
 	glDeleteProgram(compShader.ID);
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
 	return 0;
 }
 
@@ -504,13 +501,6 @@ unsigned int quadVAO=0, quadVBO=0;
 void renderQuad() {
 	if (quadVAO == 0) {
 		float quadVertices[] = {
-			// positions        // texCoords
-			 // 0.75f,  1.0f, 0.0f, 0.0f, 1.0f,
-			 // 0.75f,  0.7f, 0.0f, 0.0f, 0.0f,
-			 // 1.0f,  0.7f, 0.0f, 1.0f, 0.0f,
-			 // 0.75f,  1.0f, 0.0f, 0.0f, 1.0f,
-			 // 1.0f,  0.7f,  0.0f, 1.0f, 0.0f,
-			 // 1.0f,  1.0f,  0.0f, 1.0f, 1.0f
 			 // positions        // texture Coords
 			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
 			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,

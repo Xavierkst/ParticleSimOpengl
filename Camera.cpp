@@ -95,6 +95,13 @@ glm::mat4 Camera::getViewMatrix() const {
 	return glm::lookAt(getPos(), getPos() + getFront(), getUp());
 }
 
+glm::mat4 Camera::getViewProjMatrix() const
+{
+	// TODO: call getViewMatrix, L-multiply with glm::perspective()
+	// requires shifting screen width & height into ctor
+	return glm::mat4(1.0f);
+}
+
 glm::vec3 Camera::getPos() const {
 	return camPos;
 }

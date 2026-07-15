@@ -1,7 +1,7 @@
 ### Simulating 1 million particles using Compute Shaders
-![Geometry Shader model explosion](https://github.com/Xavierkst/OpenglProj/blob/main/textures/Particle_Sim_OpenGL.gif)
+![Compute Shader Particle simulation - 1M particles](https://github.com/Xavierkst/OpenglProj/blob/main/textures/Particle_Sim_OpenGL.gif)
 1,000,000 particles with gravitational forces acted on by the 2 red objects orbiting in circular motion. 
-150-200 frame rate achieved.
+150-200 Frames per second achieved.
 
 ### Creating an exploding effect with the geometry shader 
 ![Geometry Shader model explosion](https://github.com/Xavierkst/OpenglProj/blob/main/explodingObjectGeomShader.gif)

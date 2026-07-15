@@ -14,7 +14,7 @@ Shader::Shader(const char* cShaderPath)
 		cShaderFile.close();
 		cShaderCode = cShaderStream.str();
 	} catch (std::ifstream::failure& e) {
-		std::cout << "ERROR::COMPUTE_SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+		std::cout << "ERROR::SHADER::COMPUTE::FILE_NOT_SUCCESFULLY_READ" << std::endl;
 	}
 	unsigned int compute;
 	const char* cShaderCode1 = cShaderCode.c_str();
@@ -27,7 +27,7 @@ Shader::Shader(const char* cShaderPath)
 
 	if (!success) {
 		glGetShaderInfoLog(compute, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+		std::cout << "ERROR::SHADER::COMPUTE::COMPILATION_FAILED\n" << infoLog << std::endl;
 	}
 
 	this->ID = glCreateProgram();
@@ -36,7 +36,7 @@ Shader::Shader(const char* cShaderPath)
 	glGetProgramiv(this->ID, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(this->ID, 512, NULL, infoLog);
-		std::cout << "ERROR::COMPUTE_SHADER::PROGRAM:: LINKING_FAILED\n" << infoLog << std::endl;
+		std::cout << "ERROR::SHADER::COMPUTE::PROGRAM:: LINKING_FAILED\n" << infoLog << std::endl;
 	}
 	
 	glDeleteShader(compute);
