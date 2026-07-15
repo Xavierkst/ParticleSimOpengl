@@ -33,9 +33,6 @@ const unsigned int SCR_HT = 600;
 const unsigned int SHADOW_WIDTH = 1024;
 const unsigned int SHADOW_HT = 1024;
 
-Camera camActor;
-Camera lightActor(glm::vec3 (-2.0, 4.0, -1.0f), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-
 int fCounter = 0;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -44,6 +41,9 @@ float lastY = (float)SCR_HT / 2.0;
 bool firstMouse = true;
 
 unsigned int planeVAO = 0;
+
+Camera camActor(glm::vec3(.0f, .0f, 3.0f), glm::vec3(.0f, .0f, -1.0f), glm::vec3(.0f, 1.0f, .0f), -90.0f, .0f, 0.1f, 1000.0f, SCR_WIDTH, SCR_HT);
+Camera lightActor(glm::vec3 (-2.0, 4.0, -1.0f), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
 
 int main() {
 	glfwInit();
@@ -167,23 +167,8 @@ int main() {
 	// get the uniform block location in each shader and bind it to an index
 	unsigned int blinnPhongIdx = glGetUniformBlockIndex(blinnPhongShader.ID, "Matrices");
 	glUniformBlockBinding(blinnPhongShader.ID, blinnPhongIdx, 2);
-
 	// unsigned int shadowMapIdx = glGetUniformBlockIndex(shadowMapShader.ID, "Matrices");
 	// glUniformBlockBinding(shadowMapShader.ID, shadowMapIdx, 2);
-
-	// Model backpackModel("./BackpackModel/backpack.obj");
-	// Model asteroidModel("./textures/rock/rock.obj");
-	// Model planetModel("./textures/planet/planet.obj");
-
-	Matrices mat1;
-	mat1.view = glm::mat4(glm::mat3(camActor.getViewMatrix()));
-	mat1.proj = glm::perspective(glm::radians(camActor.getFov()), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 100.0f);
-
-	// Pass in the matrix data to the buffer:
-	// glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-	// glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mat1.view));
-	// glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(mat1.proj));
-	// glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	// Generate another FBO attached with a color buffer of the same dimensions, in order to blit 
 	// the multisampled 2D texture (down-res), which allows us to perform post-processing on the 
@@ -293,7 +278,7 @@ int main() {
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-
+		// Print FPS every 500 frames
 		if (fCounter < 500) {
 			fCounter++;
 		} else {
@@ -307,20 +292,15 @@ int main() {
 			cmd->execute(camActor, deltaTime);
 		}
 		cmds.clear();
+
 		glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
-		glm::mat4 model(1.0f);
-		// camActor.getViewMatrix();
-		glm::mat4 viewMat = camActor.getViewMatrix();
-		glm::mat4 projMat = glm::perspective(camActor.getFov(), (float)SCR_WIDTH / (float)SCR_HT, 0.1f, 1000.0f);
-
-		// glActiveTexture(GL_TEXTURE0);
 		// Bind a texture you created with the dimensions of the your viewport. 
-		// In the render pass, your frag shader will 
 		particles.Update(deltaTime);
-		particles.Render(projMat * viewMat);
+		particles.Render(camActor.getViewProjMatrix());
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		glfwSwapBuffers(window);
 		glfwPollEvents(); 

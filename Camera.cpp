@@ -11,8 +11,12 @@ void Camera::updateCameraVectors() {
 	camUp = glm::normalize(glm::cross(camRight, camFront));
 }
 
-Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 up, float y, float p) :
+Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 up, float y, float p, float nPlane, float fPlane, int width, int height) :
 	camPos(pos), camFront(target), camUp(up), worldUp(glm::vec3(.0f, 1.0f, .0f)), gravity(-9.8f), fov(45.0f), pitch(p), yaw(y), grounded(true) {
+	nearPlane = nPlane;
+	farPlane = fPlane;
+	scrWidth = width;
+	scrHeight = height;
 	updateCameraVectors();
 }
 
@@ -97,9 +101,7 @@ glm::mat4 Camera::getViewMatrix() const {
 
 glm::mat4 Camera::getViewProjMatrix() const
 {
-	// TODO: call getViewMatrix, L-multiply with glm::perspective()
-	// requires shifting screen width & height into ctor
-	return glm::mat4(1.0f);
+	return glm::perspective(getFov(), (float)scrWidth / (float)scrHeight, nearPlane, farPlane) * getViewMatrix();
 }
 
 glm::vec3 Camera::getPos() const {
