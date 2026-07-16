@@ -1,132 +1,337 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
+    <Filter Include="include">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
+    <Filter Include="src">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="assets">
+      <UniqueIdentifier>{8badfb84-3c28-4da9-bdb3-7704c65303b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{c6ccdc3d-3ea7-44c9-b918-e464639a4418}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\blinnPhong">
+      <UniqueIdentifier>{4f1fffe4-cb7c-4e4e-9d9d-9f130648c2b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\cubeMap">
+      <UniqueIdentifier>{0232931b-e029-4ff0-a3a2-91ea4a4656c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\shadowMap">
+      <UniqueIdentifier>{9c2e6668-c49f-4e12-b0e7-f97dfa9d12de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\reflection">
+      <UniqueIdentifier>{004e26a5-249e-452b-83d8-69ed73af0b91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\geomShader">
+      <UniqueIdentifier>{dcef370f-ab56-4e65-ad4d-3d0a76041673}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\computeShader">
+      <UniqueIdentifier>{4558af57-b099-4f09-83e9-378c0809eaf9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\instancedRendering">
+      <UniqueIdentifier>{4c09765c-d497-4364-a152-1b1639c4b9aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\stencil">
+      <UniqueIdentifier>{f8978609-2581-4490-872a-9f5666860a1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\planet">
+      <UniqueIdentifier>{8fc0b403-180d-48cf-904d-385119e849ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\rock">
+      <UniqueIdentifier>{0ca8bb14-fbce-4f26-9e0b-1c1cfb810acd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\skybox">
+      <UniqueIdentifier>{f9a8f5ec-76ac-4c01-b05b-fba63377a202}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assets\BackpackModel">
+      <UniqueIdentifier>{8d1fb4a9-9670-4a1e-9a15-3b72cee42ccd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Libraries\Include\glad\glad.c" />
+    <ClCompile Include="src\Camera.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="Command.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\ColorTechnique.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\Command.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="InputHandler.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\DummyFile.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="Shader.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\InputHandler.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="Mesh.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="Model.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\Mesh.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="Libraries\Include\glad\glad.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\Model.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="ParticlesTechnique.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\Particles.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="Technique.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\ParticlesTechnique.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="Particles.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\Shader.cpp">
+      <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="ColorTechnique.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\Technique.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Shader.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\Camera.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="stb_image.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\ColorTechnique.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\Command.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="StbFile.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\InputHandler.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="Command.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\Mesh.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="InputHandler.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\Model.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="Model.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\Particles.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="Mesh.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\ParticlesTechnique.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="Point.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\Shader.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="Particles.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\StbFile.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="ParticlesTechnique.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\Technique.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="Technique.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\Point.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="ColorTechnique.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\stb_image.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="blinnPhong.vert" />
-    <None Include="blinnPhong.frag" />
-    <None Include="depthTest.frag" />
-    <None Include="depthTest.vert" />
-    <None Include="stencilTest.frag" />
-    <None Include="framebuffer.frag" />
-    <None Include="cubeMap.vert" />
-    <None Include="cubeMap.frag" />
-    <None Include="reflect.vert" />
-    <None Include="reflect.frag" />
-    <None Include="uboShader.vert" />
-    <None Include="geomShader.geom" />
-    <None Include="geomShader.vert" />
-    <None Include="geomShader.frag" />
-    <None Include="explodingGeom.geom" />
-    <None Include="README.md">
-      <Filter>Header Files</Filter>
+    <None Include="shaders\framebuffer.frag">
+      <Filter>shaders</Filter>
     </None>
-    <None Include="normalDisplay.geom" />
-    <None Include="normalDisplay.frag" />
-    <None Include="normalDisplay.vert" />
-    <None Include="frameBuffer.vert" />
-    <None Include="planet.vert" />
-    <None Include="planet.frag" />
-    <None Include="screen.vert" />
-    <None Include="screen.frag" />
-    <None Include="shadowMap.vert" />
-    <None Include="shadowMap.frag" />
-    <None Include="bphongShadow.vert" />
-    <None Include="bphongShadow.frag" />
-    <None Include="compShader.comp" />
-    <None Include="particleSim.comp" />
-    <None Include="particleSim.vert" />
-    <None Include="particleSim.frag" />
+    <None Include="shaders\frameBuffer.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\screen.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\screen.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\uboShader.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\blinnPhong\blinnPhong.vert">
+      <Filter>shaders\blinnPhong</Filter>
+    </None>
+    <None Include="shaders\blinnPhong\blinnPhong.frag">
+      <Filter>shaders\blinnPhong</Filter>
+    </None>
+    <None Include="shaders\shadowMap\bphongShadow.frag">
+      <Filter>shaders\shadowMap</Filter>
+    </None>
+    <None Include="shaders\shadowMap\bphongShadow.vert">
+      <Filter>shaders\shadowMap</Filter>
+    </None>
+    <None Include="shaders\shadowMap\shadowMap.frag">
+      <Filter>shaders\shadowMap</Filter>
+    </None>
+    <None Include="shaders\shadowMap\shadowMap.vert">
+      <Filter>shaders\shadowMap</Filter>
+    </None>
+    <None Include="shaders\geomShader\normalDisplay.vert">
+      <Filter>shaders\geomShader</Filter>
+    </None>
+    <None Include="shaders\geomShader\normalDisplay.geom">
+      <Filter>shaders\geomShader</Filter>
+    </None>
+    <None Include="shaders\geomShader\normalDisplay.frag">
+      <Filter>shaders\geomShader</Filter>
+    </None>
+    <None Include="shaders\geomShader\geomShader.vert">
+      <Filter>shaders\geomShader</Filter>
+    </None>
+    <None Include="shaders\geomShader\geomShader.geom">
+      <Filter>shaders\geomShader</Filter>
+    </None>
+    <None Include="shaders\geomShader\geomShader.frag">
+      <Filter>shaders\geomShader</Filter>
+    </None>
+    <None Include="shaders\geomShader\explodingGeom.geom">
+      <Filter>shaders\geomShader</Filter>
+    </None>
+    <None Include="shaders\reflection\reflect.vert">
+      <Filter>shaders\reflection</Filter>
+    </None>
+    <None Include="shaders\reflection\reflect.frag">
+      <Filter>shaders\reflection</Filter>
+    </None>
+    <None Include="shaders\computeShader\particleSim.vert">
+      <Filter>shaders\computeShader</Filter>
+    </None>
+    <None Include="shaders\computeShader\particleSim.frag">
+      <Filter>shaders\computeShader</Filter>
+    </None>
+    <None Include="shaders\computeShader\particleSim.comp">
+      <Filter>shaders\computeShader</Filter>
+    </None>
+    <None Include="shaders\computeShader\compShader.comp">
+      <Filter>shaders\computeShader</Filter>
+    </None>
+    <None Include="shaders\cubeMap\cubeMap.frag">
+      <Filter>shaders\cubeMap</Filter>
+    </None>
+    <None Include="shaders\cubeMap\cubeMap.vert">
+      <Filter>shaders\cubeMap</Filter>
+    </None>
+    <None Include="shaders\shadowMap\depthTest.frag">
+      <Filter>shaders\shadowMap</Filter>
+    </None>
+    <None Include="shaders\shadowMap\depthTest.vert">
+      <Filter>shaders\shadowMap</Filter>
+    </None>
+    <None Include="shaders\instancedRendering\planet.frag">
+      <Filter>shaders\instancedRendering</Filter>
+    </None>
+    <None Include="shaders\instancedRendering\planet.vert">
+      <Filter>shaders\instancedRendering</Filter>
+    </None>
+    <None Include="shaders\stencil\stencilTest.frag">
+      <Filter>shaders\stencil</Filter>
+    </None>
+    <None Include="assets\textures\planet\planet.mtl">
+      <Filter>assets\planet</Filter>
+    </None>
+    <None Include="assets\textures\rock\rock.mtl">
+      <Filter>assets\rock</Filter>
+    </None>
+    <None Include="assets\textures\BackpackModel\backpack.mtl">
+      <Filter>assets\BackpackModel</Filter>
+    </None>
+    <None Include="README.md" />
+    <None Include=".gitignore" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\textures\awesomeface.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\blending_transparent_window.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\container.jpg">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\container2.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\container2_specular.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\grass.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\lighting_maps_specular_color.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\marble.jpg">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\matrix.jpg">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\metal.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\normal.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\wood.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="assets\textures\planet\mars.png">
+      <Filter>assets\planet</Filter>
+    </Image>
+    <Image Include="assets\textures\skybox\right.jpg">
+      <Filter>assets\skybox</Filter>
+    </Image>
+    <Image Include="assets\textures\skybox\top.jpg">
+      <Filter>assets\skybox</Filter>
+    </Image>
+    <Image Include="assets\textures\skybox\left.jpg">
+      <Filter>assets\skybox</Filter>
+    </Image>
+    <Image Include="assets\textures\skybox\front.jpg">
+      <Filter>assets\skybox</Filter>
+    </Image>
+    <Image Include="assets\textures\skybox\back.jpg">
+      <Filter>assets\skybox</Filter>
+    </Image>
+    <Image Include="assets\textures\skybox\bottom.jpg">
+      <Filter>assets\skybox</Filter>
+    </Image>
+    <Image Include="assets\textures\skybox\NormalMap.png">
+      <Filter>assets\skybox</Filter>
+    </Image>
+    <Image Include="assets\textures\rock\rock.png">
+      <Filter>assets\rock</Filter>
+    </Image>
+    <Image Include="assets\textures\BackpackModel\ao.jpg">
+      <Filter>assets\BackpackModel</Filter>
+    </Image>
+    <Image Include="assets\textures\BackpackModel\diffuse.jpg">
+      <Filter>assets\BackpackModel</Filter>
+    </Image>
+    <Image Include="assets\textures\BackpackModel\roughness.jpg">
+      <Filter>assets\BackpackModel</Filter>
+    </Image>
+    <Image Include="assets\textures\BackpackModel\specular.jpg">
+      <Filter>assets\BackpackModel</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="assets\textures\planet\planet.obj">
+      <Filter>assets\planet</Filter>
+    </Object>
+    <Object Include="assets\textures\rock\rock.obj">
+      <Filter>assets\rock</Filter>
+    </Object>
+    <Object Include="assets\textures\BackpackModel\backpack.obj">
+      <Filter>assets\BackpackModel</Filter>
+    </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="assets\textures\planet\source.txt">
+      <Filter>assets\planet</Filter>
+    </Text>
+    <Text Include="assets\textures\BackpackModel\source_attribution.txt">
+      <Filter>assets\BackpackModel</Filter>
+    </Text>
   </ItemGroup>
 </Project>

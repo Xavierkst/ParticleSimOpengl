@@ -128,6 +128,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)src;$(ProjectDir)assets;$(ProjectDir)..\;$(ProjectDir)shaders</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,67 +154,114 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="ColorTechnique.cpp" />
-    <ClCompile Include="Command.cpp" />
-    <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="Libraries\Include\glad\glad.c" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Model.cpp" />
-    <ClCompile Include="Particles.cpp" />
-    <ClCompile Include="ParticlesTechnique.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="Technique.cpp" />
+    <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\ColorTechnique.cpp" />
+    <ClCompile Include="src\Command.cpp" />
+    <ClCompile Include="src\DummyFile.cpp" />
+    <ClCompile Include="src\InputHandler.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Mesh.cpp" />
+    <ClCompile Include="src\Model.cpp" />
+    <ClCompile Include="src\Particles.cpp" />
+    <ClCompile Include="src\ParticlesTechnique.cpp" />
+    <ClCompile Include="src\Shader.cpp" />
+    <ClCompile Include="src\Technique.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="ColorTechnique.h" />
-    <ClInclude Include="Command.h" />
-    <ClInclude Include="InputHandler.h" />
-    <ClInclude Include="Model.h" />
-    <ClInclude Include="Particles.h" />
-    <ClInclude Include="ParticlesTechnique.h" />
-    <ClInclude Include="Point.h" />
-    <ClInclude Include="StbFile.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="stb_image.h" />
-    <ClInclude Include="Mesh.h" />
-    <ClInclude Include="Technique.h" />
+    <ClInclude Include="include\Camera.h" />
+    <ClInclude Include="include\ColorTechnique.h" />
+    <ClInclude Include="include\Command.h" />
+    <ClInclude Include="include\InputHandler.h" />
+    <ClInclude Include="include\Mesh.h" />
+    <ClInclude Include="include\Model.h" />
+    <ClInclude Include="include\Particles.h" />
+    <ClInclude Include="include\ParticlesTechnique.h" />
+    <ClInclude Include="include\Point.h" />
+    <ClInclude Include="include\Shader.h" />
+    <ClInclude Include="include\StbFile.h" />
+    <ClInclude Include="include\stb_image.h" />
+    <ClInclude Include="include\Technique.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="bphongShadow.frag" />
-    <None Include="bphongShadow.vert" />
-    <None Include="compShader.comp" />
-    <None Include="cubeMap.frag" />
-    <None Include="cubeMap.vert" />
-    <None Include="depthTest.frag" />
-    <None Include="depthTest.vert" />
-    <None Include="explodingGeom.geom" />
-    <None Include="framebuffer.frag" />
-    <None Include="frameBuffer.vert" />
-    <None Include="geomShader.frag" />
-    <None Include="geomShader.geom" />
-    <None Include="geomShader.vert" />
-    <None Include="normalDisplay.frag" />
-    <None Include="normalDisplay.geom" />
-    <None Include="normalDisplay.vert" />
-    <None Include="blinnPhong.frag" />
-    <None Include="particleSim.comp" />
-    <None Include="particleSim.frag" />
-    <None Include="particleSim.vert" />
-    <None Include="planet.frag" />
-    <None Include="planet.vert" />
+    <None Include=".gitignore" />
+    <None Include="assets\textures\BackpackModel\backpack.mtl" />
+    <None Include="assets\textures\planet\planet.mtl" />
+    <None Include="assets\textures\rock\rock.mtl" />
     <None Include="README.md" />
-    <None Include="reflect.frag" />
-    <None Include="reflect.vert" />
-    <None Include="screen.frag" />
-    <None Include="screen.vert" />
-    <None Include="shadowMap.frag" />
-    <None Include="shadowMap.vert" />
-    <None Include="stencilTest.frag" />
-    <None Include="blinnPhong.vert" />
-    <None Include="uboShader.vert" />
+    <None Include="shaders\blinnPhong\blinnPhong.frag" />
+    <None Include="shaders\blinnPhong\blinnPhong.vert" />
+    <None Include="shaders\computeShader\compShader.comp" />
+    <None Include="shaders\computeShader\particleSim.comp" />
+    <None Include="shaders\computeShader\particleSim.frag" />
+    <None Include="shaders\computeShader\particleSim.vert" />
+    <None Include="shaders\cubeMap\cubeMap.frag" />
+    <None Include="shaders\cubeMap\cubeMap.vert" />
+    <None Include="shaders\framebuffer.frag" />
+    <None Include="shaders\frameBuffer.vert" />
+    <None Include="shaders\geomShader\explodingGeom.geom" />
+    <None Include="shaders\geomShader\geomShader.frag" />
+    <None Include="shaders\geomShader\geomShader.geom" />
+    <None Include="shaders\geomShader\geomShader.vert" />
+    <None Include="shaders\geomShader\normalDisplay.frag" />
+    <None Include="shaders\geomShader\normalDisplay.geom" />
+    <None Include="shaders\geomShader\normalDisplay.vert" />
+    <None Include="shaders\instancedRendering\planet.frag" />
+    <None Include="shaders\instancedRendering\planet.vert" />
+    <None Include="shaders\reflection\reflect.frag" />
+    <None Include="shaders\reflection\reflect.vert" />
+    <None Include="shaders\screen.frag" />
+    <None Include="shaders\screen.vert" />
+    <None Include="shaders\shadowMap\bphongShadow.frag" />
+    <None Include="shaders\shadowMap\bphongShadow.vert" />
+    <None Include="shaders\shadowMap\depthTest.frag" />
+    <None Include="shaders\shadowMap\depthTest.vert" />
+    <None Include="shaders\shadowMap\shadowMap.frag" />
+    <None Include="shaders\shadowMap\shadowMap.vert" />
+    <None Include="shaders\stencil\stencilTest.frag" />
+    <None Include="shaders\uboShader.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\textures\awesomeface.png" />
+    <Image Include="assets\textures\BackpackModel\ao.jpg" />
+    <Image Include="assets\textures\BackpackModel\diffuse.jpg" />
+    <Image Include="assets\textures\BackpackModel\roughness.jpg" />
+    <Image Include="assets\textures\BackpackModel\specular.jpg" />
+    <Image Include="assets\textures\blending_transparent_window.png" />
+    <Image Include="assets\textures\container.jpg" />
+    <Image Include="assets\textures\container2.png" />
+    <Image Include="assets\textures\container2_specular.png" />
+    <Image Include="assets\textures\grass.png" />
+    <Image Include="assets\textures\lighting_maps_specular_color.png" />
+    <Image Include="assets\textures\marble.jpg" />
+    <Image Include="assets\textures\matrix.jpg" />
+    <Image Include="assets\textures\metal.png" />
+    <Image Include="assets\textures\normal.png" />
+    <Image Include="assets\textures\planet\mars.png" />
+    <Image Include="assets\textures\rock\rock.png" />
+    <Image Include="assets\textures\skybox\back.jpg" />
+    <Image Include="assets\textures\skybox\bottom.jpg" />
+    <Image Include="assets\textures\skybox\front.jpg" />
+    <Image Include="assets\textures\skybox\left.jpg" />
+    <Image Include="assets\textures\skybox\NormalMap.png" />
+    <Image Include="assets\textures\skybox\right.jpg" />
+    <Image Include="assets\textures\skybox\top.jpg" />
+    <Image Include="assets\textures\wood.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="assets\textures\BackpackModel\backpack.obj">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </Object>
+    <Object Include="assets\textures\planet\planet.obj">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </Object>
+    <Object Include="assets\textures\rock\rock.obj">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="assets\textures\BackpackModel\source_attribution.txt" />
+    <Text Include="assets\textures\planet\source.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
